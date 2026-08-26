@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The best card to pay with, by merchant.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Which Card">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#EFEEEA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131417" media="(prefers-color-scheme: dark)">
+<style>
+  /* keep content clear of the notch and the home indicator when launched standalone */
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .searchdock{top:env(safe-area-inset-top)}
+</style>
+<title>Which Card Do I Swipe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Azeret+Mono:wght@400;500;600;700&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --ground:#EFEEEA;
+  --surface:#FFFFFF;
+  --surface-2:#E7E5E0;
+  --line:#D6D3CC;
+  --line-strong:#B9B5AC;
+  --ink:#16181C;
+  --ink-2:#4A4E57;
+  --muted:#7C818C;
+  --brass:#8A5A05;
+  --brass-ink:#5E3D02;
+  --brass-wash:#F3E4C4;
+  --warn:#9A3A21;
+  --warn-wash:#F6E2DA;
+  --csr:#3C5F8F;
+  --dap:#98453E;
+  --cfu:#3D7A64;
+  --amz:#6A5C96;
+  --shadow:0 1px 2px rgba(20,18,14,.06),0 8px 24px -12px rgba(20,18,14,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131417;
+    --surface:#1B1D21;
+    --surface-2:#23262B;
+    --line:#2C3037;
+    --line-strong:#3D424A;
+    --ink:#E8E9EC;
+    --ink-2:#B6BAC2;
+    --muted:#868C97;
+    --brass:#F0A830;
+    --brass-ink:#FFC86B;
+    --brass-wash:#3A2C12;
+    --warn:#E58164;
+    --warn-wash:#3A211A;
+    --csr:#6E97D4;
+    --dap:#D3766C;
+    --cfu:#5FB394;
+    --amz:#9C8BD6;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131417;
+  --surface:#1B1D21;
+  --surface-2:#23262B;
+  --line:#2C3037;
+  --line-strong:#3D424A;
+  --ink:#E8E9EC;
+  --ink-2:#B6BAC2;
+  --muted:#868C97;
+  --brass:#F0A830;
+  --brass-ink:#FFC86B;
+  --brass-wash:#3A2C12;
+  --warn:#E58164;
+  --warn-wash:#3A211A;
+  --csr:#6E97D4;
+  --dap:#D3766C;
+  --cfu:#5FB394;
+  --amz:#9C8BD6;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Archivo","Helvetica Neue",Arial,sans-serif;
+  font-variation-settings:"wdth" 100;
+  font-size:16px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"Azeret Mono",ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:3px}
+
+.wrap{max-width:730px;margin:0 auto;padding:0 20px 96px}
+
+/* ---------- masthead ---------- */
+header.top{
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  padding:30px 0 18px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:baseline;gap:12px}
+.brand h1{
+  margin:0;font-size:25px;font-weight:700;letter-spacing:-.025em;
+  font-variation-settings:"wdth" 112;text-wrap:balance;
+}
+.brand .tick{
+  width:9px;height:24px;background:var(--brass);border-radius:1px;
+  transform:translateY(2px);flex:none;
+}
+.topmeta{display:flex;align-items:center;gap:8px}
+.tbtn{
+  background:transparent;border:1px solid var(--line);color:var(--ink-2);
+  border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  font-family:"Azeret Mono",monospace;transition:border-color .15s,color .15s,background .15s;
+}
+.tbtn:hover{border-color:var(--line-strong);color:var(--ink)}
+.tbtn[aria-pressed="true"],.tbtn.on{
+  background:var(--brass-wash);border-color:var(--brass);color:var(--brass-ink);
+}
+
+/* ---------- search ---------- */
+.searchdock{position:sticky;top:0;z-index:30;background:var(--ground);padding-bottom:12px}
+.searchdock::after{
+  content:"";position:absolute;left:0;right:0;bottom:-22px;height:22px;
+  background:linear-gradient(var(--ground),transparent);pointer-events:none;
+}
+.searchbox{
+  display:flex;align-items:center;gap:12px;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:0 16px;
+  box-shadow:var(--shadow);transition:border-color .15s;
+}
+.searchbox:focus-within{border-color:var(--brass)}
+.searchbox svg{flex:none;color:var(--muted)}
+#q{
+  flex:1;border:0;background:transparent;padding:17px 0;font-size:19px;
+  font-weight:500;letter-spacing:-.01em;min-width:0;
+}
+#q::placeholder{color:var(--muted);font-weight:400}
+#q:focus{outline:none}
+.slashkey{
+  flex:none;font-family:"Azeret Mono",monospace;font-size:11px;color:var(--muted);
+  border:1px solid var(--line);border-radius:5px;padding:2px 7px;
+}
+.clearbtn{flex:none;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px;line-height:0}
+.clearbtn:hover{color:var(--ink)}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.chip{
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;
+  padding:6px 12px;font-size:13px;color:var(--ink-2);cursor:pointer;
+  transition:border-color .15s,color .15s,transform .1s;
+}
+.chip:hover{border-color:var(--line-strong);color:var(--ink);transform:translateY(-1px)}
+
+/* ---------- suggestions ---------- */
+.sugg{
+  margin-top:10px;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+}
+.sugg button{
+  display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;
+  background:none;border:0;border-bottom:1px solid var(--line);
+  padding:11px 15px;text-align:left;cursor:pointer;
+}
+.sugg button:last-child{border-bottom:0}
+.sugg button:hover,.sugg button.cursor{background:var(--surface-2)}
+.sugg .sname{font-weight:500}
+.sugg .scat{font-family:"Azeret Mono",monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+/* ---------- result ---------- */
+.answer{margin-top:26px}
+.answer.swap{animation:rise .22s cubic-bezier(.2,.7,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+.qhead{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin-bottom:13px}
+.qhead h2{
+  margin:0;font-size:27px;font-weight:700;letter-spacing:-.03em;
+  font-variation-settings:"wdth" 108;
+}
+.cattag{
+  font-family:"Azeret Mono",monospace;font-size:11px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
+  border-radius:4px;padding:3px 8px;
+}
+
+.winner{
+  position:relative;background:var(--surface);border:1px solid var(--line);
+  border-left:4px solid var(--brass);border-radius:12px;padding:20px 22px 18px;
+  box-shadow:var(--shadow);
+}
+.wtop{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.wlabel{
+  font-family:"Azeret Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--brass-ink);background:var(--brass-wash);
+  border-radius:4px;padding:3px 8px;display:inline-block;margin-bottom:9px;
+}
+.wname{
+  margin:0;font-size:29px;font-weight:700;letter-spacing:-.03em;line-height:1.08;
+  font-variation-settings:"wdth" 106;
+}
+.wsub{margin:5px 0 0;font-size:14px;color:var(--muted)}
+.wrate{text-align:right;flex:none}
+.wrate .big{
+  font-family:"Azeret Mono",monospace;font-size:38px;font-weight:700;
+  letter-spacing:-.045em;line-height:1;color:var(--brass-ink);display:block;
+}
+.wrate .cur{
+  font-family:"Azeret Mono",monospace;font-size:11px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);margin-top:5px;display:block;
+}
+.wval{
+  display:flex;align-items:baseline;gap:8px;margin-top:15px;padding-top:14px;
+  border-top:1px solid var(--line);
+}
+.wval b{font-family:"Azeret Mono",monospace;font-size:19px;font-weight:700;letter-spacing:-.02em}
+.wval span{font-size:13px;color:var(--muted)}
+
+/* runners up */
+.rest{margin-top:9px;display:flex;flex-direction:column;gap:6px}
+.row{
+  display:grid;grid-template-columns:6px 1fr auto auto;align-items:center;gap:13px;
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  padding:12px 15px 12px 0;overflow:hidden;
+}
+.row .rail{width:6px;height:100%;min-height:44px;align-self:stretch}
+.rname{font-size:15px;font-weight:500;letter-spacing:-.01em}
+.rmult{font-family:"Azeret Mono",monospace;font-size:12px;color:var(--muted);white-space:nowrap}
+.rval{font-family:"Azeret Mono",monospace;font-size:15px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.row.dead .rname,.row.dead .rval{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+
+.bar{height:4px;width:132px;max-width:100%;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-top:7px}
+.bar i{display:block;height:100%;border-radius:2px;opacity:.8;transition:width .4s cubic-bezier(.2,.7,.3,1)}
+
+/* notes */
+.notes{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.note{
+  display:flex;gap:11px;font-size:13.5px;line-height:1.5;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:12px 15px;
+}
+.note .k{
+  flex:none;font-family:"Azeret Mono",monospace;font-size:10px;font-weight:700;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--muted);padding-top:2px;width:52px;
+}
+.note.flag{background:var(--warn-wash);border-color:transparent}
+.note.flag .k{color:var(--warn)}
+.note.gold{background:var(--brass-wash);border-color:transparent}
+.note.gold .k{color:var(--brass-ink)}
+
+/* ---------- settings ---------- */
+.panel{
+  margin-top:14px;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;padding:18px 20px;
+}
+.panel h3{
+  margin:0 0 4px;font-family:"Azeret Mono",monospace;font-size:11px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.panel p.hint{margin:0 0 16px;font-size:13px;color:var(--muted);max-width:60ch}
+.slider{display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:center;margin-bottom:15px}
+.slider label{font-size:14px;font-weight:500}
+.slider .v{font-family:"Azeret Mono",monospace;font-size:14px;font-weight:600;color:var(--brass-ink)}
+.slider input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--brass);margin:2px 0 0}
+.slider small{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.toggles{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+
+/* ---------- cards view ---------- */
+.cardsheet{
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:18px 20px;margin-bottom:12px;border-left:4px solid var(--line);
+}
+.cardsheet header{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:3px}
+.cardsheet h3{margin:0;font-size:20px;font-weight:700;letter-spacing:-.025em;font-variation-settings:"wdth" 106}
+.cardsheet .cur{font-family:"Azeret Mono",monospace;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.ratetable{display:flex;flex-direction:column;gap:0;margin-top:12px}
+.ratetable .rr{
+  display:grid;grid-template-columns:1fr 84px;align-items:center;gap:12px;
+  padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;
+}
+.ratetable .rr:last-child{border-bottom:0}
+.ratetable input{
+  width:100%;background:var(--ground);border:1px solid var(--line);border-radius:6px;
+  padding:5px 8px;font-family:"Azeret Mono",monospace;font-size:13px;font-weight:600;text-align:right;
+}
+.ratetable input:focus{outline:none;border-color:var(--brass)}
+.perks{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.perks li{font-size:13px;color:var(--ink-2);display:flex;gap:9px;line-height:1.45}
+.perks li::before{content:"";flex:none;width:4px;height:4px;border-radius:50%;background:var(--brass);margin-top:8px}
+
+footer{
+  margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--muted);line-height:1.6;
+}
+footer b{color:var(--ink-2);font-weight:600}
+.hidden{display:none !important}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+@media (max-width:520px){
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;margin-right:-20px;padding-right:20px}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none}
+
+  .wrate .big{font-size:31px}
+  .wname{font-size:24px}
+  .qhead h2{font-size:22px}
+  .row{grid-template-columns:6px 1fr auto;row-gap:2px}
+  .row .rmult{grid-column:2/-1;font-size:11px}
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="tick"></span><h1>Which Card Do I Swipe</h1></div>
+    <div class="topmeta">
+      <button class="tbtn" id="navSearch" aria-pressed="true">Search</button>
+      <button class="tbtn" id="navCards" aria-pressed="false">My cards</button>
+    </div>
+  </header>
+
+  <div id="viewSearch">
+    <div class="searchdock">
+      <div class="searchbox">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="text" placeholder="Where are you paying?" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        <button class="clearbtn hidden" id="clear" aria-label="Clear">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <span class="slashkey">/</span>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="sugg hidden" id="sugg"></div>
+    </div>
+    <div class="answer" id="answer"></div>
+
+    <div class="panel" id="settings">
+      <h3>How to rank them</h3>
+      <div class="toggles" style="margin:0 0 14px">
+        <button class="tbtn" id="mSimple" aria-pressed="true">Plain %</button>
+        <button class="tbtn" id="mValue" aria-pressed="false">Point value</button>
+      </div>
+      <p class="hint" id="modeHint"></p>
+      <div id="valueOnly" class="hidden">
+      <div class="slider">
+        <label for="urv">Chase Ultimate Rewards</label><span class="v mono" id="urvv"></span>
+        <input type="range" id="urv" min="1" max="2.6" step="0.05">
+        <small>1.0¢ if you take statement credit. Around 2¢ is typical through Points Boost or a transfer to Hyatt.</small>
+      </div>
+      <div class="slider">
+        <label for="skv">Delta SkyMiles</label><span class="v mono" id="skvv"></span>
+        <input type="range" id="skv" min="0.8" max="2" step="0.05">
+        <small>Delta prices dynamically. 1.2¢ is a fair long-run average; flash sales beat it, last-minute fares don't.</small>
+      </div>
+      </div>
+      <div class="toggles">
+        <button class="tbtn" id="tAbroad" aria-pressed="false">Outside the U.S.</button>
+        <button class="tbtn" id="tPortal" aria-pressed="false">Portal booking OK</button>
+        <button class="tbtn" id="tTheme">Theme</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewCards" class="hidden"></div>
+
+  <footer>
+    <b>Percentages are the earn rate, not a guarantee of value.</b> A Chase point is worth 1¢ cashed out and more if you transfer it, so treat the percentage as the floor. <b>Check the rates before you rely on them.</b> Issuers change categories constantly — the Sapphire Reserve was rebuilt in 2025 and no longer pays a bonus on general travel, which is the single biggest change reflected here. Every multiplier on the <b>My cards</b> tab is editable and saves in this browser, so correct anything that has moved. Merchant categories are the usual coding, not a guarantee: the merchant's own MCC decides, and it can differ by location and by how you check out.
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ cards ============ */
+var CARDS = [
+  { id:"csr", name:"Chase Sapphire Reserve", short:"Sapphire Reserve", cur:"ur", color:"var(--csr)", ftf:0,
+    base:1,
+    rates:{ chase_travel:8, flights:4, hotels:4, delta:4, dining:3, lyft:5 },
+    perks:[
+      "$300 annual travel credit — applies to almost anything travel-coded, including the categories that now only earn 1×",
+      "$500 The Edit hotel credit, in two $250 halves, on 2+ night stays booked through Chase Travel",
+      "$300 dining credit at Sapphire Reserve Exclusive Tables restaurants, in two halves",
+      "DoorDash: monthly promo credits plus complimentary DashPass",
+      "Apple TV+ and Apple Music covered — don't pay for these on another card",
+      "$300 StubHub / viagogo credit and a Peloton credit",
+      "No foreign transaction fee, and primary rental car coverage"
+    ]},
+  { id:"cfu", name:"Chase Freedom Unlimited", short:"Freedom Unlimited", cur:"ur", color:"var(--cfu)", ftf:3,
+    base:1.5,
+    rates:{ chase_travel:5, dining:3, drugstore:3 },
+    perks:[
+      "Its points are the same currency as the Reserve's — move them into the Reserve account and they transfer to Hyatt, United and the rest",
+      "1.5× on absolutely everything is what makes it the default: no category, no cap, no enrollment",
+      "3% foreign transaction fee — never use it outside the U.S.",
+      "No annual fee, so nothing has to be earned back"
+    ]},
+  { id:"amz", name:"Amazon Prime Visa", short:"Prime Visa", cur:"amz", color:"var(--amz)", ftf:0,
+    base:1,
+    rates:{ amazon:5, chase_travel:5, dining:2, gas:2, transit:2, lyft:2, rideshare:2 },
+    perks:[
+      "The 5% needs an active Prime membership — without it the rate drops to 3%",
+      "Covers Whole Foods and Amazon Fresh in-store, not just Amazon.com",
+      "Points are fixed at 1¢ and don't pool with your Chase Ultimate Rewards balance",
+      "No foreign transaction fee, no annual fee"
+    ]},
+  { id:"dap", name:"Delta SkyMiles Platinum Amex", short:"Delta Platinum", cur:"sky", color:"var(--dap)", ftf:0,
+    base:1,
+    rates:{ delta:3, hotels:3, dining:2, grocery:2 },
+    perks:[
+      "Companion certificate each year on renewal — main-cabin round trip in the U.S., and it alone can outweigh the fee",
+      "Free first checked bag for you and everyone on the reservation",
+      "$120 Resy credit and a $120 rideshare credit, both in monthly increments",
+      "$150 Delta Stays credit, and an MQD head start toward status",
+      "Not accepted everywhere — Costco is Visa-only, and small merchants often refuse Amex"
+    ]}
+];
+
+var CURRENCIES = {
+  ur:{ label:"Ultimate Rewards", unit:"x", cpp:1.75, adjustable:true },
+  sky:{ label:"SkyMiles", unit:"x", cpp:1.2, adjustable:true },
+  amz:{ label:"cash back", unit:"%", cpp:1.0, adjustable:false }
+};
+
+/* ============ categories ============ */
+var CATS = {
+  dining:      { label:"Restaurants & delivery", phrase:"restaurants and delivery", chip:"Dining" },
+  grocery:     { label:"Supermarket", phrase:"supermarkets", chip:"Groceries" },
+  grocery_web: { label:"Online grocery delivery", chip:"Grocery delivery" },
+  amazon:      { label:"Amazon & Whole Foods", phrase:"Amazon and Whole Foods", chip:"Amazon" },
+  superstore:  { label:"Superstore", chip:null },
+  wholesale:   { label:"Warehouse club", chip:null },
+  gas:         { label:"Gas station", phrase:"gas stations", chip:"Gas" },
+  drugstore:   { label:"Drugstore", phrase:"drugstores", chip:"Drugstore" },
+  flights:     { label:"Airfare, booked direct", phrase:"flights booked direct with the airline", chip:"Flights" },
+  delta:       { label:"Delta, booked direct", phrase:"Delta, booked direct", chip:null },
+  hotels:      { label:"Hotel, booked direct", phrase:"hotels booked direct with the property", chip:"Hotels" },
+  chase_travel:{ label:"Chase Travel portal", phrase:"anything booked through Chase Travel", chip:"Chase Travel" },
+  travel_other:{ label:"Other travel", chip:"Rental cars & Airbnb" },
+  transit:     { label:"Transit & commuting", phrase:"transit and commuting", chip:null },
+  lyft:        { label:"Lyft", phrase:"Lyft rides", chip:null },
+  rideshare:   { label:"Rideshare & taxi", phrase:"rideshare and taxis", chip:"Rideshare" },
+  streaming:   { label:"Streaming & digital", chip:"Streaming" },
+  retail:      { label:"General retail", chip:null },
+  bills:       { label:"Bills & recurring", chip:"Bills & rent" },
+  none:        { label:"Everything else", chip:"Everything else" }
+};
+
+/* categories where the multiplier is genuinely just the base rate */
+var BASE_CATS = { grocery_web:1, superstore:1, wholesale:1, travel_other:1, streaming:1, retail:1, bills:1, none:1 };
+
+/* ============ notes ============ */
+var N = {
+  grocery_web:"Delivery apps code as online grocers, and no card here pays a supermarket bonus on those — Amex explicitly carves out online-only grocery. Everything falls to base rate, so the card with the best flat rate wins by default.",
+  superstore:"Codes as a discount store or superstore, never as a supermarket, no matter how much of the cart is food. The grocery bonuses do not apply.",
+  wholesale:"Warehouse clubs are excluded from every grocery bonus on these four cards.",
+  travel_other:"The 2025 Sapphire Reserve rebuild deleted the general travel category. Car rentals, Airbnb, cruises, trains, parking and third-party booking sites now earn only its base rate. They still count toward the $300 travel credit, though — spend that first.",
+  chase_travel:"Booking through the portal earns the most points, but you give up airline and hotel elite credit, upgrades and status nights, and changes go through Chase rather than the operator.",
+  dining_tie:"The Reserve and the Freedom Unlimited pay the same 3× here, so it's a coin flip in the U.S. Use the Reserve anyway if the meal is abroad or you want the trip protections behind it.",
+  abroad:"Outside the U.S. the Freedom Unlimited's 3% foreign transaction fee is applied against its earn rate below — that's why it drops. The other three charge nothing.",
+  noamex:"Costco takes Visa only, so the Amex is out of the running here.",
+  miles:"SkyMiles aren't cents. Two miles per dollar is worth roughly 2.4¢ if you redeem them well and about 2¢ if you don't — which is how it edges out a flat 1.5%.",
+  delta_soft:"The Reserve earns more raw value, but the Delta Platinum is what carries the free checked bag, the MQD head start toward status and progress on the companion certificate. On a Delta ticket those are usually worth more than the point spread."
+};
+
+/* ============ merchants ============ */
+/* [name, category, note?, flags?]  flags: {noAmex:true} */
+var M = [
+  // dining
+  ["DoorDash","dining","The Reserve carries monthly DoorDash credits and a free DashPass — check whether a credit covers this before you think about multipliers."],
+  ["Uber Eats","dining","Eats orders code as dining; Uber rides do not. Two different answers on the same app."],
+  ["Grubhub","dining"],["Seamless","dining"],["Caviar","dining"],["Postmates","dining"],["Toast","dining"],
+  ["Resy","dining","The Delta Platinum has a $120/yr Resy credit — worth burning even though it isn't the top earner."],
+  ["OpenTable","dining"],["Tock","dining"],
+  ["Starbucks","dining","In-store and app reloads code as dining. Starbucks cards bought off a grocery-store rack take the grocery store's category instead."],
+  ["Dunkin'","dining"],["Chipotle","dining"],["Sweetgreen","dining"],["Cava","dining"],["Panera","dining"],
+  ["McDonald's","dining"],["Chick-fil-A","dining"],["Shake Shack","dining"],["Five Guys","dining"],["In-N-Out","dining"],
+  ["Wendy's","dining"],["Burger King","dining"],["Taco Bell","dining"],["Popeyes","dining"],["Raising Cane's","dining"],
+  ["Subway","dining"],["Domino's","dining"],["Pizza Hut","dining"],["Papa John's","dining"],["Sbarro","dining"],
+  ["Olive Garden","dining"],["Cheesecake Factory","dining"],["Texas Roadhouse","dining"],["Outback","dining"],
+  ["Applebee's","dining"],["Chili's","dining"],["Buffalo Wild Wings","dining"],["IHOP","dining"],["Denny's","dining"],
+  ["Waffle House","dining"],["Cracker Barrel","dining"],["Red Lobster","dining"],["P.F. Chang's","dining"],
+  ["Nobu","dining"],["Carbone","dining"],["Bar / nightclub","dining"],["Coffee shop","dining"],["Brewery / taproom","dining"],
+  ["Bakery","dining","A standalone bakery codes as dining. The bakery counter inside a supermarket takes the supermarket's category."],
+  ["Food truck","dining"],["Catering","dining"],["Wine bar","dining"],["Room service","hotels","Charged to the room, so it takes the hotel's category, not dining."],
+
+  // groceries
+  ["Kroger","grocery"],["Safeway","grocery"],["Albertsons","grocery"],["Publix","grocery"],["H-E-B","grocery"],
+  ["Wegmans","grocery"],["Trader Joe's","grocery"],["Aldi","grocery"],["Lidl","grocery"],["Sprouts","grocery"],
+  ["Giant","grocery"],["Stop & Shop","grocery"],["Food Lion","grocery"],["Winn-Dixie","grocery"],["ShopRite","grocery"],
+  ["Ralphs","grocery"],["Vons","grocery"],["Harris Teeter","grocery"],["Piggly Wiggly","grocery"],["The Fresh Market","grocery"],
+  ["Erewhon","grocery"],["Gelson's","grocery"],["Hy-Vee","grocery"],["Bodega / corner store","grocery"],["Farmers market","grocery"],
+  ["Meijer","grocery","Usually codes as a supermarket, but some locations register as a superstore and pay nothing extra."],
+  ["Butcher / fishmonger","grocery"],["Liquor store","grocery","Standalone liquor stores usually code as a grocery-adjacent retailer, not as dining."],
+
+  // online grocery
+  ["Instacart","grocery_web"],["Shipt","grocery_web"],["FreshDirect","grocery_web"],["Gopuff","grocery_web"],
+  ["Thrive Market","grocery_web"],["Misfits Market","grocery_web"],["Weee!","grocery_web"],["Boxed","grocery_web"],
+  ["HelloFresh","grocery_web"],["Blue Apron","grocery_web"],["Home Chef","grocery_web"],["Factor","grocery_web"],
+
+  // amazon
+  ["Amazon","amazon"],["Amazon Fresh","amazon"],["Whole Foods","amazon"],["Amazon Grocery","amazon"],["Amazon Go","amazon"],
+  ["Amazon Pharmacy","amazon"],["Audible","amazon"],["Kindle","amazon"],["Prime Video","amazon"],
+  ["Zappos","retail","Amazon owns it, but it isn't an Amazon.com purchase, so the 5% doesn't reach it."],
+  ["Twitch","streaming"],["AWS","bills","Codes as computer services — no bonus anywhere."],
+
+  // superstore / club
+  ["Walmart","superstore"],["Target","superstore"],["Dollar General","superstore"],["Dollar Tree","superstore"],
+  ["Big Lots","superstore"],["Five Below","superstore"],
+  ["Costco","wholesale",null,{noAmex:true}],["Sam's Club","wholesale"],["BJ's Wholesale","wholesale"],
+
+  // drugstore
+  ["CVS","drugstore"],["Walgreens","drugstore"],["Rite Aid","drugstore"],["Duane Reade","drugstore"],["Pharmacy","drugstore"],
+
+  // gas
+  ["Shell","gas"],["Exxon","gas"],["Mobil","gas"],["Chevron","gas"],["BP","gas"],["Texaco","gas"],["Sunoco","gas"],
+  ["Citgo","gas"],["Marathon","gas"],["Speedway","gas"],["Wawa","gas"],["QuikTrip","gas"],["Sheetz","gas"],
+  ["Casey's","gas"],["Circle K","gas"],["76","gas"],["Arco","gas"],["Buc-ee's","gas"],["Pilot / Flying J","gas"],["Love's","gas"],
+  ["Tesla Supercharger","bills","EV charging almost never codes as a gas station — expect utilities or miscellaneous, and no bonus."],
+  ["Electrify America","bills","Same as other EV charging: no gas bonus."],["ChargePoint","bills"],["EVgo","bills"],
+
+  // airlines
+  ["Delta","delta"],["Delta Air Lines","delta"],["Delta seat / bag fee","delta"],["Delta Sky Club","delta"],
+  ["American Airlines","flights"],["United","flights"],["Southwest","flights"],["JetBlue","flights"],["Alaska Airlines","flights"],
+  ["Spirit","flights"],["Frontier","flights"],["Hawaiian","flights"],["Breeze","flights"],["Sun Country","flights"],
+  ["Air France","flights"],["KLM","flights"],["British Airways","flights"],["Virgin Atlantic","flights"],["Lufthansa","flights"],
+  ["Emirates","flights"],["Qatar Airways","flights"],["Singapore Airlines","flights"],["ANA","flights"],["Japan Airlines","flights"],
+  ["Air Canada","flights"],["Aeromexico","flights"],["Avianca","flights"],["Copa","flights"],["Iberia","flights"],
+  ["Turkish Airlines","flights"],["Etihad","flights"],["Cathay Pacific","flights"],["Korean Air","flights"],["Qantas","flights"],
+  ["Ryanair","flights"],["easyJet","flights"],["Airline seat / bag fee","flights"],["Airline lounge membership","flights"],
+
+  // hotels
+  ["Marriott","hotels"],["Bonvoy","hotels"],["Hilton","hotels"],["Hyatt","hotels"],["IHG","hotels"],["Holiday Inn","hotels"],
+  ["Wyndham","hotels"],["Choice Hotels","hotels"],["Best Western","hotels"],["Four Seasons","hotels"],["Ritz-Carlton","hotels"],
+  ["St. Regis","hotels"],["W Hotels","hotels"],["Westin","hotels"],["Sheraton","hotels"],["Courtyard","hotels"],
+  ["Residence Inn","hotels"],["Fairfield Inn","hotels"],["Hampton Inn","hotels"],["Embassy Suites","hotels"],
+  ["DoubleTree","hotels"],["Waldorf Astoria","hotels"],["Conrad","hotels"],["Andaz","hotels"],["Park Hyatt","hotels"],
+  ["Aman","hotels"],["Rosewood","hotels"],["Mandarin Oriental","hotels"],["The Peninsula","hotels"],["Accor","hotels"],
+  ["Sofitel","hotels"],["Motel 6","hotels"],["Super 8","hotels"],["La Quinta","hotels"],["Extended Stay","hotels"],
+  ["Sonesta","hotels"],["Loews","hotels"],["Omni","hotels"],["Kimpton","hotels"],["Ace Hotel","hotels"],["citizenM","hotels"],
+  ["Resort fee","hotels","Charged by the property, so it takes the hotel category — one of the few resort fees worth anything."],
+
+  // portal
+  ["Chase Travel","chase_travel"],["The Edit","chase_travel","The Reserve's hotel collection books through Chase Travel, so it earns the portal rate and draws on the $500 Edit credit."],
+  ["Ultimate Rewards travel","chase_travel"],
+
+  // other travel
+  ["Airbnb","travel_other"],["Vrbo","travel_other"],["Booking.com","travel_other"],["Expedia","travel_other"],
+  ["Hotels.com","travel_other"],["Priceline","travel_other"],["Agoda","travel_other"],["Trip.com","travel_other"],
+  ["Kayak","travel_other"],["Google Flights","travel_other","Google hands you off to the airline or an agency — whoever charges the card sets the category."],
+  ["Hertz","travel_other"],["Avis","travel_other"],["Enterprise","travel_other"],["National","travel_other"],
+  ["Budget","travel_other"],["Sixt","travel_other"],["Turo","travel_other"],["Zipcar","travel_other"],
+  ["Amtrak","travel_other"],["Eurostar","travel_other"],["Trenitalia","travel_other"],["Greyhound","travel_other"],
+  ["Royal Caribbean","travel_other"],["Carnival","travel_other"],["Norwegian Cruise","travel_other"],["Viking","travel_other"],
+  ["Disney Cruise","travel_other"],["Parking","travel_other"],["Airport parking","travel_other"],["Tolls","travel_other"],
+  ["E-ZPass","travel_other"],["Ferry","travel_other"],["Travel agency","travel_other"],["Lounge day pass","travel_other"],
+  ["Global Entry","travel_other","The Reserve reimburses Global Entry, TSA PreCheck or NEXUS every four years — put it on the Reserve for the credit, not the points."],
+  ["TSA PreCheck","travel_other"],["CLEAR","travel_other"],
+
+  // transit & rideshare
+  ["Lyft","lyft","The Reserve's elevated Lyft rate is promotional and expires — confirm it's still running before you count on it."],
+  ["Uber","rideshare","Rides only. Uber Eats is a dining purchase and ranks differently."],
+  ["Taxi","rideshare"],["Curb","rideshare"],["Via","rideshare"],["Revel","rideshare"],["Black car / limo","rideshare"],
+  ["MTA / OMNY","transit"],["BART","transit"],["Metro fare","transit"],["Caltrain","transit"],["Metra","transit"],
+  ["SEPTA","transit"],["PATH","transit"],["Bus fare","transit"],["Commuter rail","transit"],["Citi Bike","transit"],
+  ["Lime","transit"],["Bird","transit"],
+
+  // streaming & digital
+  ["Netflix","streaming"],["Spotify","streaming"],["Hulu","streaming"],["Disney+","streaming"],["Max","streaming"],
+  ["Peacock","streaming"],["Paramount+","streaming"],["YouTube TV","streaming"],["YouTube Premium","streaming"],
+  ["Sirius XM","streaming"],
+  ["Apple Music","streaming","The Reserve reimburses Apple Music and Apple TV+ — pay with it and the cost goes to zero, which beats any multiplier."],
+  ["Apple TV+","streaming","Covered by the Reserve's Apple credit. Put it there."],
+  ["Steam","streaming"],["PlayStation","streaming"],["Xbox","streaming"],["Nintendo","streaming"],["Patreon","streaming"],
+  ["Substack","streaming"],["iCloud","streaming"],["Dropbox","streaming"],["ChatGPT","streaming"],["Claude","streaming"],
+
+  // retail
+  ["Apple","retail"],["Best Buy","retail"],["Home Depot","retail"],["Lowe's","retail"],["IKEA","retail"],["Wayfair","retail"],
+  ["Etsy","retail"],["eBay","retail"],["Nike","retail"],["Lululemon","retail"],["Zara","retail"],["H&M","retail"],
+  ["Uniqlo","retail"],["Nordstrom","retail"],["Macy's","retail"],["Bloomingdale's","retail"],["Saks","retail"],
+  ["Neiman Marcus","retail"],["REI","retail"],["Patagonia","retail"],["Sephora","retail"],["Ulta","retail"],
+  ["Warby Parker","retail"],["SSENSE","retail"],["Net-a-Porter","retail"],["Farfetch","retail"],["Mytheresa","retail"],
+  ["Shopify store","retail","Shopify passes through whatever the individual store is set up as — usually general retail."],
+  ["StubHub","retail","The Reserve carries a StubHub and viagogo credit. Use the credit first, then worry about the rate."],
+  ["Ticketmaster","retail"],["SeatGeek","retail"],["AXS","retail"],["Eventbrite","retail"],
+  ["Peloton","retail","The Reserve has a Peloton credit covering equipment and membership."],
+  ["Equinox","retail"],["Planet Fitness","retail"],["ClassPass","retail"],["SoulCycle","retail"],["Gym membership","retail"],
+  ["Chewy","retail"],["Petco","retail"],["PetSmart","retail"],["AutoZone","retail"],["Car repair","retail"],
+  ["Furniture store","retail"],["Bookstore","retail"],["Hardware store","retail"],
+
+  // bills
+  ["Rent","bills","Rent platforms usually add a 2.5–3% card fee, which is more than any of these cards earn back."],
+  ["Mortgage","bills"],["Utilities","bills"],["Electric bill","bills"],["Internet bill","bills"],["Verizon","bills"],
+  ["AT&T","bills"],["T-Mobile","bills"],["Xfinity","bills"],["Insurance","bills"],["Geico","bills"],["State Farm","bills"],
+  ["Progressive","bills"],["Property tax","bills"],["Tuition","bills"],["Daycare","bills"],["Doctor","bills"],
+  ["Dentist","bills","Ask about a payment plan first — medical offices often waive the card fee for one."],
+  ["Hospital","bills"],["Veterinarian","bills"],["Charity donation","bills"],
+  ["IRS / taxes","bills","The processors charge roughly 1.8%, more than the 1.5× base earns back unless you're chasing a signup bonus."],
+  ["PayPal","none","PayPal usually passes the underlying merchant's category through, so look up the actual store instead."],
+  ["Venmo","none"],["Cash App","none"],["Zelle","none"],
+  ["Gift cards","none","Gift cards bought off a supermarket rack normally still earn the supermarket's rate — which is how people manufacture grocery spend."],
+  ["ATM / cash advance","none","No points, a flat fee, and interest from the moment you withdraw. Don't."],
+  ["Wire transfer","none"],["Money order","none"],["Cryptocurrency","none","Treated as a cash advance by most issuers."]
+];
+
+/* ============ state ============ */
+var LSK = "whichcard.v1";
+var state = { mode:"simple", ur:1.75, sky:1.2, abroad:false, portal:false, theme:null, rates:{} };
+try{ var saved = JSON.parse(localStorage.getItem(LSK)||"{}"); for(var k in saved) state[k]=saved[k]; }catch(e){}
+function save(){ try{ localStorage.setItem(LSK, JSON.stringify(state)); }catch(e){} }
+
+function rateFor(card, cat){
+  var ov = state.rates[card.id]||{};
+  if(Object.prototype.hasOwnProperty.call(ov,cat)) return +ov[cat];
+  if(Object.prototype.hasOwnProperty.call(card.rates,cat)) return card.rates[cat];
+  if(cat==="base") return Object.prototype.hasOwnProperty.call(ov,"base") ? +ov.base : card.base;
+  return Object.prototype.hasOwnProperty.call(ov,"base") ? +ov.base : card.base;
+}
+function cpp(card){
+  if(card.cur==="ur") return state.ur;
+  if(card.cur==="sky") return state.sky;
+  return 1;
+}
+
+/* ============ ranking ============ */
+function rank(cat, flags){
+  flags = flags || {};
+  var effCat = cat;
+  if(state.portal && (cat==="flights"||cat==="hotels"||cat==="delta"||cat==="travel_other")) effCat = "chase_travel";
+
+  var rows = CARDS.map(function(c){
+    var r = rateFor(c, effCat);
+    var isBase = !Object.prototype.hasOwnProperty.call(c.rates, effCat) && !Object.prototype.hasOwnProperty.call(state.rates[c.id]||{}, effCat);
+    var value = r * cpp(c);
+    var fee = 0;
+    if(state.abroad && c.ftf) fee = c.ftf;
+    var dead = (flags.noAmex && c.id==="dap");
+    return { card:c, rate:r, isBase:isBase, gross:value, fee:fee, value:value-fee,
+             netRate:(c.cur==="sky" ? r : r-fee), dead:dead, cat:effCat };
+  });
+
+  var simple = state.mode==="simple";
+  rows.sort(function(a,b){
+    if(a.dead!==b.dead) return a.dead?1:-1;
+    if(simple){
+      if(Math.abs(b.rate-a.rate) > 0.005) return b.rate-a.rate;
+    } else {
+      if(Math.abs(b.value-a.value) > 0.005) return b.value-a.value;
+    }
+    return CARDS.indexOf(a.card)-CARDS.indexOf(b.card);
+  });
+  return rows;
+}
+
+/* ============ search ============ */
+function norm(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,""); }
+
+/* words people actually type that aren't the entry's name */
+var CAT_ALIAS = {
+  dining:"restaurant restaurants food eatingout takeout delivery bar cafe",
+  grocery:"grocery groceries supermarket supermarkets foodstore market",
+  grocery_web:"grocery groceries delivery mealkit",
+  amazon:"amazon wholefoods prime",
+  superstore:"walmart target bigbox discount",
+  wholesale:"costco samsclub warehouse club bulk",
+  gas:"gas fuel petrol fillup station",
+  drugstore:"pharmacy drugstore chemist medicine",
+  flights:"airline airfare plane flight ticket",
+  delta:"skymiles airline flight",
+  hotels:"hotel lodging stay resort motel",
+  chase_travel:"portal ultimaterewards booking",
+  travel_other:"travel carrental rentalcar airbnb cruise train parking",
+  transit:"subway metro train bus commute fare",
+  lyft:"rideshare ride",
+  rideshare:"uber ride taxi cab",
+  streaming:"streaming subscription music video app software",
+  retail:"shopping store clothes electronics online",
+  bills:"bill bills rent utilities subscription insurance recurring",
+  none:"other misc everythingelse anything unknown"
+};
+var MERCH_ALIAS = {
+  "Xfinity":"comcast", "Max":"hbo hbomax", "MTA / OMNY":"subway metrocard newyork",
+  "Whole Foods":"wholefoods grocery", "Amazon":"amazoncom", "Delta":"skymiles",
+  "CVS":"pharmacy", "Walgreens":"pharmacy", "Instacart":"grocerydelivery",
+  "IRS / taxes":"tax taxes irs", "Rent":"apartment landlord", "Costco":"warehouse",
+  "Chase Travel":"portal ultimaterewards", "Uber":"rideshare", "Lyft":"rideshare"
+};
+var INDEX = M.map(function(m,i){
+  return { i:i, name:m[0], cat:m[1], note:m[2]||null, flags:m[3]||null, n:norm(m[0]),
+           a:norm(MERCH_ALIAS[m[0]]||"") };
+});
+Object.keys(CATS).forEach(function(k){
+  INDEX.push({ i:-1, name:CATS[k].label, cat:k, note:null, flags:null, n:norm(CATS[k].label),
+               a:norm(CAT_ALIAS[k]||""), isCat:true });
+});
+
+/* forgiving only for dropped/typo'd letters: must start at the front and stay tight */
+function subseq(hay, needle){
+  if(hay[0]!==needle[0]) return false;
+  var j=0, end=-1;
+  for(var i=0;i<hay.length && j<needle.length;i++){ if(hay[i]===needle[j]){ j++; end=i; } }
+  return j===needle.length && (end+1) <= needle.length+3;
+}
+function search(qs){
+  var n = norm(qs);
+  if(!n) return [];
+  var out=[], solid=0;
+  INDEX.forEach(function(e){
+    var s=-1;
+    if(e.n===n) s=0;
+    else if(e.n.indexOf(n)===0) s=1;
+    else if(e.n.indexOf(n)>0) s=2 + e.n.indexOf(n)/100;
+    else if(e.a && e.a.indexOf(n)>=0) s=4;
+    else if(n.length>=4 && subseq(e.n,n)) s=6;
+    if(s>=0){ if(s<4) solid++; if(e.isCat && s<4) s+=0.4; if(e.isCat && s===4) s-=0.6; out.push({e:e,s:s+e.n.length/1000}); }
+  });
+  /* once there are real matches, stop showing the forgiving ones */
+  if(solid>=3) out = out.filter(function(o){ return o.s<3.4; });
+  out.sort(function(a,b){ return a.s-b.s; });
+  return out.slice(0,7).map(function(o){ return o.e; });
+}
+
+/* ============ rendering ============ */
+var elQ=document.getElementById("q"), elSugg=document.getElementById("sugg"),
+    elAns=document.getElementById("answer"), elChips=document.getElementById("chips"),
+    elClear=document.getElementById("clear");
+var cursor=-1, results=[], current=null;
+
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function fmtRate(row){
+  var u = CURRENCIES[row.card.cur].unit;
+  var r = row.rate;
+  var txt = (Math.round(r*100)/100).toString();
+  return u==="%" ? txt+"%" : txt+"×";
+}
+function fmtVal(v){ return (Math.round(v*100)/100).toFixed(2)+"¢"; }
+/* Chase and Amazon points cash out at 1¢, so "%" is literally what you get back.
+   SkyMiles are not cents, so they stay labelled as miles. */
+function unitLabel(card){
+  return card.cur==="sky" ? "SkyMiles per $1" : "back";
+}
+function fmtSimple(row){
+  var r = Math.round((row.netRate!=null?row.netRate:row.rate)*100)/100;
+  return row.card.cur==="sky" ? r+"\u00D7" : r+"%";
+}
+
+function render(entry){
+  current = entry;
+  if(!entry){ elAns.innerHTML=""; return; }
+  var cat = entry.cat, flags = entry.flags||{};
+  var rows = rank(cat, flags);
+  var top = rows[0], rest = rows.slice(1);
+  var effCat = top.cat;
+  var simple = state.mode==="simple";
+  var metric = function(r){ return simple ? r.netRate : r.value; };
+  var maxV = Math.max.apply(null, rows.map(function(r){return Math.max(metric(r),0.01);}));
+
+  var multLine;
+  if(BASE_CATS[effCat] || top.isBase){
+    multLine = simple ? "Flat rate — nothing here earns a category bonus"
+                      : "Base rate — nothing here earns a category bonus";
+  } else if(simple){
+    multLine = "On " + (CATS[effCat].phrase||CATS[effCat].label.toLowerCase());
+  } else {
+    multLine = fmtRate(top)+" on "+(CATS[effCat].phrase||CATS[effCat].label.toLowerCase());
+  }
+
+  var h = '<div class="qhead"><h2>'+esc(entry.name)+'</h2><span class="cattag">'+esc(CATS[effCat].label)+'</span></div>';
+
+  h += '<div class="winner">'
+     +   '<div class="wtop"><div>'
+     +     '<span class="wlabel">Use this one</span>'
+     +     '<p class="wname">'+esc(top.card.short)+'</p>'
+     +     '<p class="wsub">'+esc(multLine)+'</p>'
+     +   '</div><div class="wrate">'
+     +     '<span class="big">'+(simple?fmtSimple(top):fmtRate(top))+'</span>'
+     +     '<span class="cur">'+esc(simple?unitLabel(top.card):CURRENCIES[top.card.cur].label)+'</span>'
+     +   '</div></div>'
+     +   (simple ? '' : '<div class="wval"><b>'+fmtVal(top.value)+'</b><span>back per $1 at your valuations</span></div>')
+     + '</div>';
+
+  h += '<div class="rest">';
+  rest.forEach(function(r){
+    var pct = Math.max(2, Math.round(Math.max(metric(r),0)/maxV*100));
+    h += '<div class="row'+(r.dead?" dead":"")+'">'
+       +   '<span class="rail" style="background:'+r.card.color+'"></span>'
+       +   '<div><div class="rname">'+esc(r.card.short)+'</div>'
+       +   '<div class="bar"><i style="width:'+(r.dead?0:pct)+'%;background:'+r.card.color+'"></i></div></div>'
+       +   '<span class="rmult">'+(r.dead?"not accepted":(simple?(r.fee?r.rate+"% earn − "+r.fee+"% foreign fee":(r.card.cur==="sky"?"SkyMiles":"")):fmtRate(r)+(r.fee?"  −"+r.fee+"% FX":"")))+'</span>'
+       +   '<span class="rval">'+(r.dead?"—":(simple?fmtSimple(r):fmtVal(r.value)))+'</span>'
+       + '</div>';
+  });
+  h += '</div>';
+
+  // notes
+  var notes=[];
+  if(entry.note) notes.push(["Note", entry.note, ""]);
+  if(N[effCat] && (!entry.note || entry.note!==N[effCat])) notes.push(["Why", N[effCat], effCat==="travel_other"?"flag":""]);
+  if(flags.noAmex) notes.push(["Amex", N.noamex, "flag"]);
+  if(effCat==="delta" && top.card.id!=="dap") notes.push(["Delta", N.delta_soft, "gold"]);
+  if(simple && top.card.cur==="sky" && rest.some(function(r){return r.card.cur!=="sky" && !r.dead;}))
+    notes.push(["Miles", N.miles, ""]);
+  if(state.abroad && rows.some(function(r){return r.fee;})) notes.push(["Abroad", N.abroad, "flag"]);
+  if(rest.length && Math.abs(metric(rest[0])-metric(top))<0.005 && !rest[0].dead){
+    notes.push(["Tie", top.card.short+" and "+rest[0].card.short+" pay the same rate here. Either is fine — take the one with the better protections or the lower foreign fee.", "gold"]);
+  }
+  if(effCat==="chase_travel" && state.portal) notes.push(["Trade-off", N.chase_travel, ""]);
+  if(!state.portal && (cat==="flights"||cat==="hotels"||cat==="delta")){
+    var portalRow = CARDS.filter(function(c){return c.id==="csr";})[0];
+    var pv = rateFor(portalRow,"chase_travel")*cpp(portalRow);
+    var pr = rateFor(portalRow,"chase_travel");
+    if(simple ? pr > top.rate+0.005 : pv > top.value+0.005)
+      notes.push(["Portal", "Booking this through Chase Travel on the Reserve instead would earn "+(simple?pr+"%":fmtVal(pv)+" per $1")+" — but you'd give up elite credit and upgrades. Toggle “Portal booking OK” below to rank it that way.", "gold"]);
+  }
+
+  if(notes.length){
+    h += '<div class="notes">';
+    notes.forEach(function(n){ h += '<div class="note '+n[2]+'"><span class="k">'+esc(n[0])+'</span><span>'+esc(n[1])+'</span></div>'; });
+    h += '</div>';
+  }
+
+  elAns.innerHTML = h;
+  elAns.classList.remove("swap"); void elAns.offsetWidth; elAns.classList.add("swap");
+}
+
+function renderSugg(){
+  if(!results.length){ elSugg.classList.add("hidden"); elSugg.innerHTML=""; return; }
+  elSugg.classList.remove("hidden");
+  elSugg.innerHTML = results.map(function(e,i){
+    return '<button data-i="'+i+'"'+(i===cursor?' class="cursor"':'')+'><span class="sname">'+esc(e.name)+'</span><span class="scat">'+esc(CATS[e.cat].label)+'</span></button>';
+  }).join("");
+}
+
+function pick(i){
+  var e = results[i]; if(!e) return;
+  elQ.value = e.name;
+  results=[]; cursor=-1; renderSugg();
+  render(e);
+  elQ.blur();
+}
+
+elQ.addEventListener("input", function(){
+  var v = elQ.value.trim();
+  elClear.classList.toggle("hidden", !v);
+  results = search(v); cursor = results.length?0:-1;
+  renderSugg();
+  if(results.length) render(results[0]);
+  else if(v) { render({name:v, cat:"none", note:"Not in the list, so this is ranked as an ordinary purchase with no category bonus. If you know how it codes, search the category name instead."}); }
+  else { render(null); }
+});
+elQ.addEventListener("keydown", function(ev){
+  if(ev.key==="ArrowDown"){ ev.preventDefault(); cursor=Math.min(cursor+1,results.length-1); renderSugg(); if(results[cursor]) render(results[cursor]); }
+  else if(ev.key==="ArrowUp"){ ev.preventDefault(); cursor=Math.max(cursor-1,0); renderSugg(); if(results[cursor]) render(results[cursor]); }
+  else if(ev.key==="Enter"){ ev.preventDefault(); pick(cursor<0?0:cursor); }
+  else if(ev.key==="Escape"){ elQ.value=""; results=[]; renderSugg(); render(null); elClear.classList.add("hidden"); }
+});
+elSugg.addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if(b) pick(+b.dataset.i);
+});
+elClear.addEventListener("click", function(){ elQ.value=""; results=[]; renderSugg(); render(null); elClear.classList.add("hidden"); elQ.focus(); });
+document.addEventListener("keydown", function(ev){
+  if(ev.key==="/" && document.activeElement!==elQ){ ev.preventDefault(); elQ.focus(); elQ.select(); }
+});
+
+/* chips */
+Object.keys(CATS).forEach(function(k){
+  if(!CATS[k].chip) return;
+  var b=document.createElement("button"); b.className="chip"; b.textContent=CATS[k].chip;
+  b.onclick=function(){ elQ.value=CATS[k].label; elClear.classList.remove("hidden"); results=[]; renderSugg(); render({name:CATS[k].label, cat:k}); };
+  elChips.appendChild(b);
+});
+
+/* settings */
+var urv=document.getElementById("urv"), skv=document.getElementById("skv");
+function syncSettings(){
+  urv.value=state.ur; skv.value=state.sky;
+  document.getElementById("urvv").textContent=(+state.ur).toFixed(2)+"¢ / point";
+  document.getElementById("skvv").textContent=(+state.sky).toFixed(2)+"¢ / mile";
+}
+urv.addEventListener("input",function(){ state.ur=+urv.value; syncSettings(); save(); if(current) render(current); });
+skv.addEventListener("input",function(){ state.sky=+skv.value; syncSettings(); save(); if(current) render(current); });
+
+function toggle(id, key){
+  var b=document.getElementById(id);
+  function paint(){ b.setAttribute("aria-pressed", state[key]?"true":"false"); }
+  b.addEventListener("click",function(){ state[key]=!state[key]; paint(); save(); if(current) render(current); });
+  paint();
+}
+toggle("tAbroad","abroad"); toggle("tPortal","portal");
+
+var mS=document.getElementById("mSimple"), mV=document.getElementById("mValue"),
+    valueOnly=document.getElementById("valueOnly"), modeHint=document.getElementById("modeHint");
+function paintMode(){
+  var simple = state.mode==="simple";
+  mS.setAttribute("aria-pressed", simple?"true":"false");
+  mV.setAttribute("aria-pressed", simple?"false":"true");
+  valueOnly.classList.toggle("hidden", simple);
+  modeHint.textContent = simple
+    ? "Straight earn rate — what the card actually gives you back. Chase and Amazon points cash out at 1¢ each, so their rate is a real percentage; Delta pays SkyMiles, which aren't cents, so those are shown as miles per dollar."
+    : "Converts every card to cents earned per dollar using the values below, so points and miles can be compared head to head. The rankings move when these sliders move.";
+  if(current) render(current);
+}
+mS.addEventListener("click",function(){ state.mode="simple"; save(); paintMode(); });
+mV.addEventListener("click",function(){ state.mode="value"; save(); paintMode(); });
+
+var tTheme=document.getElementById("tTheme");
+function applyTheme(){ if(state.theme) document.documentElement.setAttribute("data-theme",state.theme); else document.documentElement.removeAttribute("data-theme"); }
+tTheme.addEventListener("click",function(){
+  state.theme = state.theme==="dark" ? "light" : state.theme==="light" ? null : "dark";
+  applyTheme(); save();
+  tTheme.textContent = state.theme ? "Theme: "+state.theme : "Theme";
+});
+applyTheme();
+if(state.theme) tTheme.textContent="Theme: "+state.theme;
+
+/* ============ cards view ============ */
+var CAT_ORDER = ["chase_travel","flights","hotels","delta","dining","grocery","amazon","gas","drugstore","transit","lyft","rideshare"];
+function renderCards(){
+  var h = '<div class="panel"><h3>Editable earn rates</h3><p class="hint">These are the rates as of the latest structures I know of. Issuers move them — change any number here and the rankings update everywhere. Blank means the card pays its base rate.</p></div>';
+  CARDS.forEach(function(c){
+    h += '<div class="cardsheet" style="border-left-color:'+c.color+'">'
+       + '<header><h3>'+esc(c.name)+'</h3><span class="cur">'+esc(CURRENCIES[c.cur].label)+'</span></header>'
+       + '<div class="ratetable">';
+    h += '<div class="rr"><span><b>Everything else</b></span><input type="number" step="0.5" min="0" data-c="'+c.id+'" data-k="base" value="'+rateFor(c,"base")+'"></div>';
+    CAT_ORDER.forEach(function(k){
+      var has = Object.prototype.hasOwnProperty.call(c.rates,k) || Object.prototype.hasOwnProperty.call(state.rates[c.id]||{},k);
+      if(!has) return;
+      h += '<div class="rr"><span>'+esc(CATS[k].label)+'</span><input type="number" step="0.5" min="0" data-c="'+c.id+'" data-k="'+k+'" value="'+rateFor(c,k)+'"></div>';
+    });
+    h += '</div><ul class="perks">'+c.perks.map(function(p){return "<li><span>"+esc(p)+"</span></li>";}).join("")+'</ul></div>';
+  });
+  h += '<div class="panel"><h3>Reset</h3><p class="hint">Puts every rate back to the built-in defaults.</p><button class="tbtn" id="resetRates">Reset all rates</button></div>';
+  document.getElementById("viewCards").innerHTML = h;
+
+  if(!renderCards.bound){
+    renderCards.bound = true;
+    document.getElementById("viewCards").addEventListener("input", function(ev){
+    var el = ev.target; if(el.tagName!=="INPUT") return;
+    var cid=el.dataset.c, k=el.dataset.k, v=parseFloat(el.value);
+    if(isNaN(v)) return;
+    state.rates[cid] = state.rates[cid]||{};
+      state.rates[cid][k]=v; save();
+    });
+  }
+  var rb=document.getElementById("resetRates");
+  if(rb) rb.onclick=function(){ state.rates={}; save(); renderCards(); };
+}
+
+var vS=document.getElementById("viewSearch"), vC=document.getElementById("viewCards"),
+    nS=document.getElementById("navSearch"), nC=document.getElementById("navCards");
+nS.onclick=function(){ vS.classList.remove("hidden"); vC.classList.add("hidden"); nS.setAttribute("aria-pressed","true"); nC.setAttribute("aria-pressed","false"); if(current) render(current); };
+nC.onclick=function(){ vC.classList.remove("hidden"); vS.classList.add("hidden"); nC.setAttribute("aria-pressed","true"); nS.setAttribute("aria-pressed","false"); renderCards(); };
+
+syncSettings();
+paintMode();
+render({name:"Everything else", cat:"none"});
+if(!("ontouchstart" in window)) elQ.focus();
+})();
+</script>
+<script>
+if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
