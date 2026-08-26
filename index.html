@@ -295,6 +295,24 @@ header.top{
   padding:5px 8px;font-family:"Azeret Mono",monospace;font-size:13px;font-weight:600;text-align:right;
 }
 .ratetable input:focus{outline:none;border-color:var(--brass)}
+.ratetable .rr.off span{color:var(--muted)}
+.ratetable .rr.off input{opacity:.65}
+.cardmeta{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+  margin-top:14px;padding:14px;background:var(--ground);border-radius:9px;
+}
+.cardmeta label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.cardmeta label small{font-weight:400;font-size:11px;color:var(--muted);line-height:1.35}
+.cardmeta input[type=text],.cardmeta input[type=number],.cardmeta select{
+  background:var(--surface);border:1px solid var(--line);border-radius:6px;
+  padding:7px 9px;font-size:14px;font-weight:500;width:100%;
+}
+.cardmeta input:focus,.cardmeta select:focus{outline:none;border-color:var(--brass)}
+.cardmeta label.chk{grid-column:1/-1;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap}
+.cardmeta label.chk input{width:auto;accent-color:var(--brass)}
+.sheetfoot{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.tbtn.danger{border-color:var(--warn);color:var(--warn)}
+.tbtn.danger:hover{background:var(--warn-wash);border-color:var(--warn)}
 .perks{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
 .perks li{font-size:13px;color:var(--ink-2);display:flex;gap:9px;line-height:1.45}
 .perks li::before{content:"";flex:none;width:4px;height:4px;border-radius:50%;background:var(--brass);margin-top:8px}
@@ -383,7 +401,7 @@ footer b{color:var(--ink-2);font-weight:600}
 
 /* ============ cards ============ */
 var CARDS = [
-  { id:"csr", name:"Chase Sapphire Reserve", short:"Sapphire Reserve", cur:"ur", color:"var(--csr)", ftf:0,
+  { id:"csr", pct:true, amex:false, name:"Chase Sapphire Reserve", short:"Sapphire Reserve", cur:"ur", color:"var(--csr)", ftf:0,
     base:1,
     rates:{ chase_travel:8, flights:4, hotels:4, delta:4, dining:3, lyft:5 },
     perks:[
@@ -395,7 +413,7 @@ var CARDS = [
       "$300 StubHub / viagogo credit and a Peloton credit",
       "No foreign transaction fee, and primary rental car coverage"
     ]},
-  { id:"cfu", name:"Chase Freedom Unlimited", short:"Freedom Unlimited", cur:"ur", color:"var(--cfu)", ftf:3,
+  { id:"cfu", pct:true, amex:false, name:"Chase Freedom Unlimited", short:"Freedom Unlimited", cur:"ur", color:"var(--cfu)", ftf:3,
     base:1.5,
     rates:{ chase_travel:5, dining:3, drugstore:3 },
     perks:[
@@ -404,7 +422,7 @@ var CARDS = [
       "3% foreign transaction fee — never use it outside the U.S.",
       "No annual fee, so nothing has to be earned back"
     ]},
-  { id:"amz", name:"Amazon Prime Visa", short:"Prime Visa", cur:"amz", color:"var(--amz)", ftf:0,
+  { id:"amz", pct:true, amex:false, name:"Amazon Prime Visa", short:"Prime Visa", cur:"amz", color:"var(--amz)", ftf:0,
     base:1,
     rates:{ amazon:5, chase_travel:5, dining:2, gas:2, transit:2, lyft:2, rideshare:2 },
     perks:[
@@ -413,7 +431,7 @@ var CARDS = [
       "Points are fixed at 1¢ and don't pool with your Chase Ultimate Rewards balance",
       "No foreign transaction fee, no annual fee"
     ]},
-  { id:"dap", name:"Delta SkyMiles Platinum Amex", short:"Delta Platinum", cur:"sky", color:"var(--dap)", ftf:0,
+  { id:"dap", pct:false, amex:true, name:"Delta SkyMiles Platinum Amex", short:"Delta Platinum", cur:"sky", color:"var(--dap)", ftf:0,
     base:1,
     rates:{ delta:3, hotels:3, dining:2, grocery:2 },
     perks:[
@@ -614,9 +632,27 @@ var M = [
 
 /* ============ state ============ */
 var LSK = "whichcard.v1";
-var state = { mode:"simple", ur:1.75, sky:1.2, abroad:false, portal:false, theme:null, rates:{} };
+var state = { mode:"simple", ur:1.75, sky:1.2, abroad:false, portal:false, theme:null, rates:{}, custom:[], hidden:{} };
 try{ var saved = JSON.parse(localStorage.getItem(LSK)||"{}"); for(var k in saved) state[k]=saved[k]; }catch(e){}
 function save(){ try{ localStorage.setItem(LSK, JSON.stringify(state)); }catch(e){} }
+
+/* the cards actually in the wallet: built-ins you haven't removed, plus your own */
+var CUSTOM_COLORS = ["#7FA05A","#B07A3F","#5E8FA8","#A8628C","#6E7BA8","#9A8248"];
+function customCard(cc){
+  return { id:cc.id, name:cc.name, short:cc.short||cc.name, custom:true,
+           cur:"custom", curName:cc.curName||"points", pct:cc.unit==="pct",
+           amex:!!cc.amex, cpp:(cc.unit==="pct" ? 1 : (+cc.cpp||1)),
+           color:cc.color, ftf:+cc.ftf||0, base:+cc.base||1, rates:cc.rates||{}, perks:cc.perks||[] };
+}
+function wallet(){
+  var out = CARDS.filter(function(c){ return !state.hidden[c.id]; });
+  (state.custom||[]).forEach(function(cc){ out.push(customCard(cc)); });
+  return out;
+}
+function curLabel(card){
+  if(card.custom) return card.pct ? "cash back" : card.curName;
+  return CURRENCIES[card.cur] ? CURRENCIES[card.cur].label : "points";
+}
 
 function rateFor(card, cat){
   var ov = state.rates[card.id]||{};
@@ -628,6 +664,7 @@ function rateFor(card, cat){
 function cpp(card){
   if(card.cur==="ur") return state.ur;
   if(card.cur==="sky") return state.sky;
+  if(card.custom) return card.cpp;
   return 1;
 }
 
@@ -637,15 +674,16 @@ function rank(cat, flags){
   var effCat = cat;
   if(state.portal && (cat==="flights"||cat==="hotels"||cat==="delta"||cat==="travel_other")) effCat = "chase_travel";
 
-  var rows = CARDS.map(function(c){
+  var deck = wallet();
+  var rows = deck.map(function(c){
     var r = rateFor(c, effCat);
     var isBase = !Object.prototype.hasOwnProperty.call(c.rates, effCat) && !Object.prototype.hasOwnProperty.call(state.rates[c.id]||{}, effCat);
     var value = r * cpp(c);
     var fee = 0;
     if(state.abroad && c.ftf) fee = c.ftf;
-    var dead = (flags.noAmex && c.id==="dap");
+    var dead = (flags.noAmex && c.amex);
     return { card:c, rate:r, isBase:isBase, gross:value, fee:fee, value:value-fee,
-             netRate:(c.cur==="sky" ? r : r-fee), dead:dead, cat:effCat };
+             netRate:(c.pct ? r-fee : r), dead:dead, cat:effCat };
   });
 
   var simple = state.mode==="simple";
@@ -656,7 +694,7 @@ function rank(cat, flags){
     } else {
       if(Math.abs(b.value-a.value) > 0.005) return b.value-a.value;
     }
-    return CARDS.indexOf(a.card)-CARDS.indexOf(b.card);
+    return deck.indexOf(a.card)-deck.indexOf(b.card);
   });
   return rows;
 }
@@ -737,7 +775,7 @@ var cursor=-1, results=[], current=null;
 
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
 function fmtRate(row){
-  var u = CURRENCIES[row.card.cur].unit;
+  var u = row.card.custom ? (row.card.pct ? "%" : "x") : CURRENCIES[row.card.cur].unit;
   var r = row.rate;
   var txt = (Math.round(r*100)/100).toString();
   return u==="%" ? txt+"%" : txt+"×";
@@ -746,11 +784,11 @@ function fmtVal(v){ return (Math.round(v*100)/100).toFixed(2)+"¢"; }
 /* Chase and Amazon points cash out at 1¢, so "%" is literally what you get back.
    SkyMiles are not cents, so they stay labelled as miles. */
 function unitLabel(card){
-  return card.cur==="sky" ? "SkyMiles per $1" : "back";
+  return card.pct ? "back" : curLabel(card)+" per $1";
 }
 function fmtSimple(row){
   var r = Math.round((row.netRate!=null?row.netRate:row.rate)*100)/100;
-  return row.card.cur==="sky" ? r+"\u00D7" : r+"%";
+  return row.card.pct ? r+"%" : r+"\u00D7";
 }
 
 function render(entry){
@@ -783,7 +821,7 @@ function render(entry){
      +     '<p class="wsub">'+esc(multLine)+'</p>'
      +   '</div><div class="wrate">'
      +     '<span class="big">'+(simple?fmtSimple(top):fmtRate(top))+'</span>'
-     +     '<span class="cur">'+esc(simple?unitLabel(top.card):CURRENCIES[top.card.cur].label)+'</span>'
+     +     '<span class="cur">'+esc(simple?unitLabel(top.card):curLabel(top.card))+'</span>'
      +   '</div></div>'
      +   (simple ? '' : '<div class="wval"><b>'+fmtVal(top.value)+'</b><span>back per $1 at your valuations</span></div>')
      + '</div>';
@@ -795,7 +833,7 @@ function render(entry){
        +   '<span class="rail" style="background:'+r.card.color+'"></span>'
        +   '<div><div class="rname">'+esc(r.card.short)+'</div>'
        +   '<div class="bar"><i style="width:'+(r.dead?0:pct)+'%;background:'+r.card.color+'"></i></div></div>'
-       +   '<span class="rmult">'+(r.dead?"not accepted":(simple?(r.fee?r.rate+"% earn − "+r.fee+"% foreign fee":(r.card.cur==="sky"?"SkyMiles":"")):fmtRate(r)+(r.fee?"  −"+r.fee+"% FX":"")))+'</span>'
+       +   '<span class="rmult">'+(r.dead?"not accepted":(simple?(r.fee?r.rate+"% earn − "+r.fee+"% foreign fee":(r.card.pct?"":curLabel(r.card))):fmtRate(r)+(r.fee?"  −"+r.fee+"% FX":"")))+'</span>'
        +   '<span class="rval">'+(r.dead?"—":(simple?fmtSimple(r):fmtVal(r.value)))+'</span>'
        + '</div>';
   });
@@ -807,7 +845,7 @@ function render(entry){
   if(N[effCat] && (!entry.note || entry.note!==N[effCat])) notes.push(["Why", N[effCat], effCat==="travel_other"?"flag":""]);
   if(flags.noAmex) notes.push(["Amex", N.noamex, "flag"]);
   if(effCat==="delta" && top.card.id!=="dap") notes.push(["Delta", N.delta_soft, "gold"]);
-  if(simple && top.card.cur==="sky" && rest.some(function(r){return r.card.cur!=="sky" && !r.dead;}))
+  if(simple && !top.card.pct && rest.some(function(r){return r.card.pct && !r.dead;}))
     notes.push(["Miles", N.miles, ""]);
   if(state.abroad && rows.some(function(r){return r.fee;})) notes.push(["Abroad", N.abroad, "flag"]);
   if(rest.length && Math.abs(metric(rest[0])-metric(top))<0.005 && !rest[0].dead){
@@ -815,11 +853,13 @@ function render(entry){
   }
   if(effCat==="chase_travel" && state.portal) notes.push(["Trade-off", N.chase_travel, ""]);
   if(!state.portal && (cat==="flights"||cat==="hotels"||cat==="delta")){
-    var portalRow = CARDS.filter(function(c){return c.id==="csr";})[0];
+    var portalRow = wallet().filter(function(c){return c.id==="csr";})[0];
+    if(portalRow){
     var pv = rateFor(portalRow,"chase_travel")*cpp(portalRow);
     var pr = rateFor(portalRow,"chase_travel");
     if(simple ? pr > top.rate+0.005 : pv > top.value+0.005)
       notes.push(["Portal", "Booking this through Chase Travel on the Reserve instead would earn "+(simple?pr+"%":fmtVal(pv)+" per $1")+" — but you'd give up elite credit and upgrades. Toggle “Portal booking OK” below to rank it that way.", "gold"]);
+    }
   }
 
   if(notes.length){
@@ -923,36 +963,135 @@ applyTheme();
 if(state.theme) tTheme.textContent="Theme: "+state.theme;
 
 /* ============ cards view ============ */
-var CAT_ORDER = ["chase_travel","flights","hotels","delta","dining","grocery","amazon","gas","drugstore","transit","lyft","rideshare"];
-function renderCards(){
-  var h = '<div class="panel"><h3>Editable earn rates</h3><p class="hint">These are the rates as of the latest structures I know of. Issuers move them — change any number here and the rankings update everywhere. Blank means the card pays its base rate.</p></div>';
-  CARDS.forEach(function(c){
-    h += '<div class="cardsheet" style="border-left-color:'+c.color+'">'
-       + '<header><h3>'+esc(c.name)+'</h3><span class="cur">'+esc(CURRENCIES[c.cur].label)+'</span></header>'
-       + '<div class="ratetable">';
-    h += '<div class="rr"><span><b>Everything else</b></span><input type="number" step="0.5" min="0" data-c="'+c.id+'" data-k="base" value="'+rateFor(c,"base")+'"></div>';
-    CAT_ORDER.forEach(function(k){
-      var has = Object.prototype.hasOwnProperty.call(c.rates,k) || Object.prototype.hasOwnProperty.call(state.rates[c.id]||{},k);
-      if(!has) return;
-      h += '<div class="rr"><span>'+esc(CATS[k].label)+'</span><input type="number" step="0.5" min="0" data-c="'+c.id+'" data-k="'+k+'" value="'+rateFor(c,k)+'"></div>';
-    });
-    h += '</div><ul class="perks">'+c.perks.map(function(p){return "<li><span>"+esc(p)+"</span></li>";}).join("")+'</ul></div>';
+var CAT_ORDER = ["chase_travel","flights","hotels","delta","dining","grocery","grocery_web",
+                 "amazon","gas","drugstore","transit","lyft","rideshare","travel_other",
+                 "streaming","superstore","wholesale","retail","bills"];
+
+function nextColor(){
+  var used = (state.custom||[]).map(function(c){ return c.color; });
+  for(var i=0;i<CUSTOM_COLORS.length;i++){ if(used.indexOf(CUSTOM_COLORS[i])<0) return CUSTOM_COLORS[i]; }
+  return CUSTOM_COLORS[used.length % CUSTOM_COLORS.length];
+}
+function newId(){
+  var n=1; var ids=(state.custom||[]).map(function(c){return c.id;});
+  while(ids.indexOf("my"+n)>=0) n++;
+  return "my"+n;
+}
+
+function rateRows(c){
+  var h = '<div class="rr"><span><b>Everything else</b></span>'
+        + '<input type="number" step="0.5" min="0" data-c="'+c.id+'" data-k="base" value="'+rateFor(c,"base")+'"></div>';
+  CAT_ORDER.forEach(function(k){
+    var own = Object.prototype.hasOwnProperty.call(c.rates,k)
+           || Object.prototype.hasOwnProperty.call(state.rates[c.id]||{},k);
+    var v = own ? rateFor(c,k) : "";
+    h += '<div class="rr'+(own?"":" off")+'"><span>'+esc(CATS[k].label)+'</span>'
+       + '<input type="number" step="0.5" min="0" placeholder="'+rateFor(c,"base")+'" data-c="'+c.id+'" data-k="'+k+'" value="'+v+'"></div>';
   });
-  h += '<div class="panel"><h3>Reset</h3><p class="hint">Puts every rate back to the built-in defaults.</p><button class="tbtn" id="resetRates">Reset all rates</button></div>';
-  document.getElementById("viewCards").innerHTML = h;
+  return h;
+}
+
+function renderCards(){
+  var deck = wallet();
+  var h = '<div class="panel"><h3>Your wallet</h3><p class="hint">Every rate here is editable and saves on this device. A blank category means the card just pays its base rate — fill one in and it starts winning that category. Add any card you carry that isn\'t listed.</p>'
+        + '<button class="tbtn on" id="addCard">+ Add a card</button></div>';
+
+  deck.forEach(function(c){
+    h += '<div class="cardsheet" style="border-left-color:'+c.color+'">'
+       + '<header><h3>'+esc(c.name)+'</h3><span class="cur">'+esc(curLabel(c))+'</span></header>';
+
+    if(c.custom){
+      var cc = state.custom.filter(function(x){return x.id===c.id;})[0];
+      h += '<div class="cardmeta">'
+         + '<label>Card name<input type="text" data-cc="'+c.id+'" data-f="name" value="'+esc(cc.name)+'"></label>'
+         + '<label>Earns<select data-cc="'+c.id+'" data-f="unit">'
+         +   '<option value="pct"'+(cc.unit==="pct"?" selected":"")+'>Cash back %</option>'
+         +   '<option value="pts"'+(cc.unit!=="pct"?" selected":"")+'>Points or miles</option>'
+         + '</select></label>';
+      if(cc.unit!=="pct"){
+        h += '<label>Points called<input type="text" data-cc="'+c.id+'" data-f="curName" value="'+esc(cc.curName||"points")+'"></label>'
+           + '<label>Worth each<input type="number" step="0.05" min="0.1" data-cc="'+c.id+'" data-f="cpp" value="'+(cc.cpp||1)+'"><small>cents, used only in Point value mode</small></label>';
+      }
+      h += '<label>Foreign fee<input type="number" step="0.5" min="0" data-cc="'+c.id+'" data-f="ftf" value="'+(cc.ftf||0)+'"><small>percent, 0 if none</small></label>'
+         + '<label class="chk"><input type="checkbox" data-cc="'+c.id+'" data-f="amex"'+(cc.amex?" checked":"")+'> It\'s an Amex <small>flags places that refuse Amex</small></label>'
+         + '</div>';
+    }
+
+    h += '<div class="ratetable">' + rateRows(c) + '</div>';
+
+    if(c.perks && c.perks.length)
+      h += '<ul class="perks">'+c.perks.map(function(pk){return "<li><span>"+esc(pk)+"</span></li>";}).join("")+'</ul>';
+
+    h += '<div class="sheetfoot">'
+       + (c.custom ? '<button class="tbtn danger" data-del="'+c.id+'">Delete this card</button>'
+                   : '<button class="tbtn" data-hide="'+c.id+'">I don\'t have this card</button>')
+       + '</div></div>';
+  });
+
+  var gone = CARDS.filter(function(c){ return state.hidden[c.id]; });
+  if(gone.length){
+    h += '<div class="panel"><h3>Removed</h3><p class="hint">Not counted in any ranking.</p><div class="toggles">'
+       + gone.map(function(c){ return '<button class="tbtn" data-show="'+c.id+'">+ '+esc(c.short)+'</button>'; }).join("")
+       + '</div></div>';
+  }
+
+  h += '<div class="panel"><h3>Reset</h3><p class="hint">Puts the four built-in cards back to their default rates. Cards you added are left alone.</p>'
+     + '<button class="tbtn" id="resetRates">Reset built-in rates</button></div>';
+
+  var host = document.getElementById("viewCards");
+  host.innerHTML = h;
 
   if(!renderCards.bound){
     renderCards.bound = true;
-    document.getElementById("viewCards").addEventListener("input", function(ev){
-    var el = ev.target; if(el.tagName!=="INPUT") return;
-    var cid=el.dataset.c, k=el.dataset.k, v=parseFloat(el.value);
-    if(isNaN(v)) return;
-    state.rates[cid] = state.rates[cid]||{};
-      state.rates[cid][k]=v; save();
+
+    host.addEventListener("input", function(ev){
+      var el = ev.target;
+      if(el.dataset.k){                                   /* a rate cell */
+        var cid=el.dataset.c, k=el.dataset.k;
+        state.rates[cid] = state.rates[cid]||{};
+        if(el.value===""){ delete state.rates[cid][k]; }
+        else { var v=parseFloat(el.value); if(isNaN(v)) return; state.rates[cid][k]=v; }
+        el.parentNode.classList.toggle("off", el.value==="");
+        save();
+      } else if(el.dataset.cc){                           /* a custom-card field */
+        var cc = state.custom.filter(function(x){return x.id===el.dataset.cc;})[0];
+        if(!cc) return;
+        var f = el.dataset.f;
+        if(f==="amex") cc.amex = el.checked;
+        else if(f==="cpp" || f==="ftf") cc[f] = parseFloat(el.value)||0;
+        else cc[f] = el.value;
+        save();
+        if(f==="unit" || f==="name") renderCards();
+        else { var hd=el.closest(".cardsheet").querySelector("header h3"); if(f==="name"&&hd) hd.textContent=cc.name; }
+      }
+    });
+
+    host.addEventListener("click", function(ev){
+      var b = ev.target.closest("button"); if(!b) return;
+      if(b.id==="addCard"){
+        state.custom = state.custom||[];
+        state.custom.push({ id:newId(), name:"New card", unit:"pct", curName:"points",
+                            cpp:1, base:1, ftf:0, amex:false, rates:{} });
+        save(); renderCards();
+        var last = host.querySelectorAll('.cardsheet input[data-f="name"]');
+        if(last.length){ var el=last[last.length-1]; el.focus(); el.select();
+                         el.scrollIntoView({block:"center", behavior:"smooth"}); }
+      } else if(b.dataset.del){
+        var cc = state.custom.filter(function(x){return x.id===b.dataset.del;})[0];
+        if(!confirm("Delete "+(cc?cc.name:"this card")+"? This can't be undone.")) return;
+        state.custom = state.custom.filter(function(x){ return x.id!==b.dataset.del; });
+        delete state.rates[b.dataset.del];
+        save(); renderCards();
+      } else if(b.dataset.hide){
+        state.hidden[b.dataset.hide]=true; save(); renderCards();
+      } else if(b.dataset.show){
+        delete state.hidden[b.dataset.show]; save(); renderCards();
+      } else if(b.id==="resetRates"){
+        CARDS.forEach(function(c){ delete state.rates[c.id]; });
+        save(); renderCards();
+      }
     });
   }
-  var rb=document.getElementById("resetRates");
-  if(rb) rb.onclick=function(){ state.rates={}; save(); renderCards(); };
 }
 
 var vS=document.getElementById("viewSearch"), vC=document.getElementById("viewCards"),
