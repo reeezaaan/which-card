@@ -2,7 +2,7 @@
    Pages (index.html): network-first, so an update shows on the very next launch.
    Assets (icons, fonts): cache-first, refreshed quietly in the background.
    Either way the app opens with no signal. */
-var CACHE = "whichcard-v6";
+var CACHE = "whichcard-v8";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest",
              "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 

@@ -131,6 +131,11 @@ header.top{
   font-family:"Azeret Mono",monospace;transition:border-color .15s,color .15s,background .15s;
 }
 .tbtn:hover{border-color:var(--line-strong);color:var(--ink)}
+.iconbtn{
+  padding:0;width:31px;height:31px;flex:none;display:inline-flex;
+  align-items:center;justify-content:center;border-radius:999px;
+}
+.iconbtn svg{width:15px;height:15px;display:block}
 .tbtn[aria-pressed="true"],.tbtn.on{
   background:var(--brass-wash);border-color:var(--brass);color:var(--brass-ink);
 }
@@ -247,6 +252,38 @@ header.top{
 
 .bar{height:4px;width:132px;max-width:100%;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-top:7px}
 .bar i{display:block;height:100%;border-radius:2px;opacity:.8;transition:width .4s cubic-bezier(.2,.7,.3,1)}
+
+/* ---------- card picker ---------- */
+.setupintro .countline{margin:14px 0 0}
+.setupintro .countline b{font-family:"Azeret Mono",monospace;font-size:12px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--brass-ink)}
+.picklist{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.pick{
+  display:grid;grid-template-columns:5px 1fr 22px;align-items:center;gap:12px;
+  background:var(--ground);border:1px solid var(--line);border-radius:9px;
+  padding:11px 13px 11px 0;text-align:left;cursor:pointer;overflow:hidden;
+  transition:border-color .15s,background .15s;
+}
+.pick:hover{border-color:var(--line-strong)}
+.pick .prail{width:5px;align-self:stretch;min-height:38px;opacity:.45;transition:opacity .15s}
+.pick.on{border-color:var(--brass);background:var(--brass-wash)}
+.pick.on .prail{opacity:1}
+.pick .pbody{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pick .pname{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.pick .pcur{font-family:"Azeret Mono",monospace;font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted)}
+.pick.on .pcur{color:var(--brass-ink)}
+.pick .ptick{
+  width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-strong);
+  position:relative;flex:none;transition:background .15s,border-color .15s;
+}
+.pick.on .ptick{background:var(--brass);border-color:var(--brass)}
+.pick.on .ptick::after{
+  content:"";position:absolute;left:6px;top:2.5px;width:5px;height:10px;
+  border:solid var(--ground);border-width:0 2px 2px 0;transform:rotate(43deg);
+}
+.setupdone{position:sticky;bottom:0;padding:14px 0 18px;background:linear-gradient(transparent,var(--ground) 30%)}
+.tbtn.big{padding:13px 26px;font-size:13px;letter-spacing:.09em;width:100%;text-align:center}
 
 /* ---------- offers ---------- */
 .offerbanner{
@@ -409,6 +446,7 @@ footer b{color:var(--ink-2);font-weight:600}
       <button class="tbtn" id="navSearch" aria-pressed="true">Search</button>
       <button class="tbtn" id="navCards" aria-pressed="false">My cards</button>
       <button class="tbtn" id="navOffers" aria-pressed="false">Offers</button>
+      <button class="tbtn iconbtn" id="tTheme" aria-label="Theme" title="Theme"></button>
     </div>
   </header>
 
@@ -434,28 +472,17 @@ footer b{color:var(--ink-2);font-weight:600}
         <button class="tbtn" id="mValue" aria-pressed="false">Point value</button>
       </div>
       <p class="hint" id="modeHint"></p>
-      <div id="valueOnly" class="hidden">
-      <div class="slider">
-        <label for="urv">Chase Ultimate Rewards</label><span class="v mono" id="urvv"></span>
-        <input type="range" id="urv" min="1" max="2.6" step="0.05">
-        <small>1.0¢ if you take statement credit. Around 2¢ is typical through Points Boost or a transfer to Hyatt.</small>
-      </div>
-      <div class="slider">
-        <label for="skv">Delta SkyMiles</label><span class="v mono" id="skvv"></span>
-        <input type="range" id="skv" min="0.8" max="2" step="0.05">
-        <small>Delta prices dynamically. 1.2¢ is a fair long-run average; flash sales beat it, last-minute fares don't.</small>
-      </div>
-      </div>
+      <div id="valueOnly" class="hidden"></div>
       <div class="toggles">
         <button class="tbtn" id="tAbroad" aria-pressed="false">Outside the U.S.</button>
         <button class="tbtn" id="tPortal" aria-pressed="false">Portal booking OK</button>
-        <button class="tbtn" id="tTheme">Theme</button>
       </div>
     </div>
   </div>
 
   <div id="viewCards" class="hidden"></div>
   <div id="viewOffers" class="hidden"></div>
+  <div id="viewSetup" class="hidden"></div>
 
   <footer>
     <b>Percentages are the earn rate, not a guarantee of value.</b> A Chase point is worth 1¢ cashed out and more if you transfer it, so treat the percentage as the floor. <b>Check the rates before you rely on them.</b> Issuers change categories constantly — the Sapphire Reserve was rebuilt in 2025 and no longer pays a bonus on general travel, which is the single biggest change reflected here. Every multiplier on the <b>My cards</b> tab is editable and saves in this browser, so correct anything that has moved. Merchant categories are the usual coding, not a guarantee: the merchant's own MCC decides, and it can differ by location and by how you check out.
@@ -467,10 +494,24 @@ footer b{color:var(--ink-2);font-weight:600}
 "use strict";
 
 /* ============ cards ============ */
-var CARDS = [
-  { id:"csr", pct:true, amex:false, name:"Chase Sapphire Reserve", short:"Sapphire Reserve", cur:"ur", color:"var(--csr)", ftf:0,
-    base:1,
-    rates:{ chase_travel:8, flights:4, hotels:4, delta:4, dining:3, lyft:5 },
+/* ============ card library ============ */
+/* pct:true means one point cashes out at ~1 cent, so its rate is a real percentage.
+   Rates are the published structures; caps and rotating categories are called out
+   in `caveat` because a capped 6% is not the same product as an uncapped one. */
+var CURRENCIES = {
+  cash:{ label:"cash back", pct:true,  cpp:1.0,  fixed:true },
+  ur:  { label:"Ultimate Rewards", pct:true,  cpp:1.75 },
+  ty:  { label:"ThankYou points",  pct:true,  cpp:1.40 },
+  mr:  { label:"Membership Rewards", pct:false, cpp:1.80 },
+  sky: { label:"SkyMiles",         pct:false, cpp:1.20 },
+  c1:  { label:"Capital One miles",pct:false, cpp:1.50 }
+};
+
+var LIB = [
+  /* ---- Chase ---- */
+  { id:"csr", issuer:"Chase", name:"Chase Sapphire Reserve", short:"Sapphire Reserve", cur:"ur",
+    color:"var(--csr)", ftf:0, amex:false, base:1,
+    rates:{ portal_air:8, portal_hotel:8, flights:4, hotels:4, delta:4, dining:3, lyft:5 },
     perks:[
       "$300 annual travel credit — applies to almost anything travel-coded, including the categories that now only earn 1×",
       "$500 The Edit hotel credit, in two $250 halves, on 2+ night stays booked through Chase Travel",
@@ -480,26 +521,37 @@ var CARDS = [
       "$300 StubHub / viagogo credit and a Peloton credit",
       "No foreign transaction fee, and primary rental car coverage"
     ]},
-  { id:"cfu", pct:true, amex:false, name:"Chase Freedom Unlimited", short:"Freedom Unlimited", cur:"ur", color:"var(--cfu)", ftf:3,
-    base:1.5,
-    rates:{ chase_travel:5, dining:3, drugstore:3 },
+  { id:"csp", issuer:"Chase", name:"Chase Sapphire Preferred", short:"Sapphire Preferred", cur:"ur",
+    color:"#4A6FA5", ftf:0, amex:false, base:1,
+    rates:{ portal_air:5, portal_hotel:5, dining:3, streaming:3, grocery_web:3, flights:2, hotels:2, travel_other:2 },
+    perks:["$50 annual hotel credit on Chase Travel bookings","10% anniversary points bonus","No foreign transaction fee, primary rental coverage"]},
+  { id:"cfu", issuer:"Chase", name:"Chase Freedom Unlimited", short:"Freedom Unlimited", cur:"ur",
+    color:"var(--cfu)", ftf:3, amex:false, base:1.5,
+    rates:{ portal_air:5, portal_hotel:5, dining:3, drugstore:3 },
     perks:[
-      "Its points are the same currency as the Reserve's — move them into the Reserve account and they transfer to Hyatt, United and the rest",
+      "Its points are the same currency as the Sapphire cards — pool them there and they transfer to Hyatt, United and the rest",
       "1.5× on absolutely everything is what makes it the default: no category, no cap, no enrollment",
       "3% foreign transaction fee — never use it outside the U.S.",
-      "No annual fee, so nothing has to be earned back"
+      "No annual fee"
     ]},
-  { id:"amz", pct:true, amex:false, name:"Amazon Prime Visa", short:"Prime Visa", cur:"amz", color:"var(--amz)", ftf:0,
-    base:1,
-    rates:{ amazon:5, chase_travel:5, dining:2, gas:2, transit:2, lyft:2, rideshare:2 },
+  { id:"cff", issuer:"Chase", name:"Chase Freedom Flex", short:"Freedom Flex", cur:"ur",
+    color:"#5E8FA8", ftf:3, amex:false, base:1,
+    rates:{ portal_air:5, portal_hotel:5, dining:3, drugstore:3 },
+    caveat:"Also 5% on rotating quarterly categories, capped at $1,500 in spend per quarter and only after you activate. Set whichever category is live this quarter to 5 below, and reset it each quarter.",
+    perks:["No annual fee","3% foreign transaction fee"]},
+  { id:"amz", issuer:"Chase", name:"Amazon Prime Visa", short:"Prime Visa", cur:"cash",
+    color:"var(--amz)", ftf:0, amex:false, base:1,
+    rates:{ amazon:5, portal_air:5, portal_hotel:5, dining:2, gas:2, transit:2, lyft:2, rideshare:2 },
     perks:[
       "The 5% needs an active Prime membership — without it the rate drops to 3%",
       "Covers Whole Foods and Amazon Fresh in-store, not just Amazon.com",
-      "Points are fixed at 1¢ and don't pool with your Chase Ultimate Rewards balance",
+      "Points are fixed at 1¢ and don't pool with Ultimate Rewards",
       "No foreign transaction fee, no annual fee"
     ]},
-  { id:"dap", pct:false, amex:true, name:"Delta SkyMiles Platinum Amex", short:"Delta Platinum", cur:"sky", color:"var(--dap)", ftf:0,
-    base:1,
+
+  /* ---- American Express ---- */
+  { id:"dap", issuer:"Amex", name:"Delta SkyMiles Platinum", short:"Delta Platinum", cur:"sky",
+    color:"var(--dap)", ftf:0, amex:true, base:1,
     rates:{ delta:3, hotels:3, dining:2, grocery:2 },
     perks:[
       "Companion certificate each year on renewal — main-cabin round trip in the U.S., and it alone can outweigh the fee",
@@ -507,14 +559,91 @@ var CARDS = [
       "$120 Resy credit and a $120 rideshare credit, both in monthly increments",
       "$150 Delta Stays credit, and an MQD head start toward status",
       "Not accepted everywhere — Costco is Visa-only, and small merchants often refuse Amex"
-    ]}
+    ]},
+  { id:"dag", issuer:"Amex", name:"Delta SkyMiles Gold", short:"Delta Gold", cur:"sky",
+    color:"#B0705A", ftf:0, amex:true, base:1,
+    rates:{ delta:2, dining:2, grocery:2 },
+    perks:["Free first checked bag","$100 Delta Stays credit","No foreign transaction fee"]},
+  { id:"axgold", issuer:"Amex", name:"American Express Gold", short:"Amex Gold", cur:"mr",
+    color:"#A8894A", ftf:0, amex:true, base:1,
+    rates:{ dining:4, grocery:4, flights:3 },
+    caveat:"The 4× on restaurants is capped at $50,000 of spend a year, and the 4× at U.S. supermarkets at $25,000 a year. Both drop to 1× past the cap.",
+    perks:["$120 dining credit and $120 Uber Cash, both in monthly increments","$100 Resy credit","No foreign transaction fee"]},
+  { id:"axplat", issuer:"Amex", name:"American Express Platinum", short:"Amex Platinum", cur:"mr",
+    color:"#7E8A99", ftf:0, amex:true, base:1,
+    rates:{ flights:5, portal_air:5, portal_hotel:5 },
+    caveat:"5× on flights booked direct or through Amex Travel, capped at $500,000 a year. Prepaid hotels booked through Amex Travel also earn 5×, but hotels booked direct earn 1×.",
+    perks:["Centurion and Priority Pass lounge access","$200 airline fee credit, $200 hotel credit, Uber Cash, and a long list of others","No foreign transaction fee"]},
+  { id:"bcp", issuer:"Amex", name:"Blue Cash Preferred", short:"Blue Cash Preferred", cur:"cash",
+    color:"#5A7FA8", ftf:2.7, amex:true, base:1,
+    rates:{ grocery:6, streaming:6, gas:3, transit:3, rideshare:3 },
+    caveat:"The 6% at U.S. supermarkets is capped at $6,000 of spend a year, then drops to 1%. Streaming is uncapped.",
+    perks:["The strongest grocery rate available, within the cap","2.7% foreign transaction fee — leave it home when travelling"]},
+
+  /* ---- Citi ---- */
+  { id:"cdc", issuer:"Citi", name:"Citi Double Cash", short:"Double Cash", cur:"ty",
+    color:"#4E8C74", ftf:3, amex:false, base:2,
+    rates:{},
+    caveat:"Earns as 1% when you buy and 1% when you pay the bill, so the second half only lands once you've paid it off.",
+    perks:["No annual fee","3% foreign transaction fee"]},
+  { id:"ccc", issuer:"Citi", name:"Citi Custom Cash", short:"Custom Cash", cur:"ty",
+    color:"#6E8C4E", ftf:3, amex:false, base:1,
+    rates:{},
+    caveat:"5% on your single highest-spend eligible category each billing cycle, capped at $500 of spend. It picks the category for you. Set whichever one you expect to top to 5 below.",
+    perks:["No annual fee"]},
+  { id:"cstrata", issuer:"Citi", name:"Citi Strata Premier", short:"Strata Premier", cur:"ty",
+    color:"#4E6E8C", ftf:0, amex:false, base:1,
+    rates:{ flights:3, hotels:3, dining:3, grocery:3, gas:3, travel_other:3 },
+    perks:["$100 annual hotel credit on $500+ bookings","No foreign transaction fee"]},
+
+  /* ---- Capital One ---- */
+  { id:"venx", issuer:"Capital One", name:"Capital One Venture X", short:"Venture X", cur:"c1",
+    color:"#8C6E4E", ftf:0, amex:false, base:2,
+    rates:{ portal_hotel:10, portal_air:5 },
+    caveat:"The 10× and 5× apply only to hotels, cars and flights booked through Capital One Travel. Booked direct, they earn the flat 2×.",
+    perks:["$300 annual Capital One Travel credit","10,000 anniversary miles","Lounge access","No foreign transaction fee"]},
+  { id:"ven", issuer:"Capital One", name:"Capital One Venture", short:"Venture", cur:"c1",
+    color:"#A88A5A", ftf:0, amex:false, base:2,
+    rates:{ portal_hotel:5 },
+    caveat:"The 5× applies only to hotels and cars booked through Capital One Travel. Booked direct, they earn the flat 2×.",
+    perks:["No foreign transaction fee"]},
+  { id:"savor", issuer:"Capital One", name:"Capital One Savor", short:"Savor", cur:"cash",
+    color:"#A85A6E", ftf:0, amex:false, base:1,
+    rates:{ dining:4, streaming:4, grocery:3 },
+    caveat:"Entertainment and streaming earn 4%, but superstores like Walmart and Target are excluded from the grocery rate.",
+    perks:["No annual fee on the current version","No foreign transaction fee"]},
+  { id:"qs", issuer:"Capital One", name:"Capital One Quicksilver", short:"Quicksilver", cur:"cash",
+    color:"#7A8A9A", ftf:0, amex:false, base:1.5, rates:{},
+    perks:["No annual fee","No foreign transaction fee"]},
+
+  /* ---- everyone else ---- */
+  { id:"disc", issuer:"Discover", name:"Discover it Cash Back", short:"Discover it", cur:"cash",
+    color:"#C8873A", ftf:0, amex:false, base:1, rates:{},
+    caveat:"5% on rotating quarterly categories, capped at $1,500 of spend per quarter and only after you activate. Set the live category to 5 below and reset each quarter. Acceptance abroad is patchy.",
+    perks:["No annual fee","No foreign transaction fee"]},
+  { id:"wfac", issuer:"Wells Fargo", name:"Wells Fargo Active Cash", short:"Active Cash", cur:"cash",
+    color:"#9A6E4E", ftf:3, amex:false, base:2, rates:{},
+    perks:["Flat 2% on everything, no categories to track","No annual fee","3% foreign transaction fee"]},
+  { id:"wfauto", issuer:"Wells Fargo", name:"Wells Fargo Autograph", short:"Autograph", cur:"cash",
+    color:"#6E5A9A", ftf:0, amex:false, base:1,
+    rates:{ dining:3, travel_other:3, flights:3, hotels:3, gas:3, transit:3, streaming:3, bills:3 },
+    caveat:"The 3× on bills covers phone plans specifically, not utilities or rent.",
+    perks:["No annual fee","No foreign transaction fee"]},
+  { id:"boacc", issuer:"Bank of America", name:"BofA Customized Cash", short:"Customized Cash", cur:"cash",
+    color:"#8C4E5A", ftf:3, amex:false, base:1,
+    rates:{ grocery:2, wholesale:2 },
+    caveat:"3% in one category you choose and can change monthly, plus 2% at grocery and warehouse clubs — the two share a combined $2,500 per quarter cap. Set your chosen 3% category below. Preferred Rewards tiers multiply all of it.",
+    perks:["No annual fee"]},
+  { id:"apple", issuer:"Apple", name:"Apple Card", short:"Apple Card", cur:"cash",
+    color:"#7A7A80", ftf:0, amex:false, base:1,
+    rates:{ streaming:3 },
+    caveat:"3% at Apple and a handful of named partners, 2% on anything paid with Apple Pay, and 1% only if you swipe the titanium card. The 2% Apple Pay rate isn't modelled here — assume 2% wherever Apple Pay is accepted.",
+    perks:["Daily Cash pays out immediately","No fees of any kind, including foreign transactions"]}
 ];
 
-var CURRENCIES = {
-  ur:{ label:"Ultimate Rewards", unit:"x", cpp:1.75, adjustable:true },
-  sky:{ label:"SkyMiles", unit:"x", cpp:1.2, adjustable:true },
-  amz:{ label:"cash back", unit:"%", cpp:1.0, adjustable:false }
-};
+/* the four this started with, used when an existing setup is carried forward */
+var LEGACY_WALLET = ["csr","cfu","amz","dap"];
+function libById(id){ for(var i=0;i<LIB.length;i++) if(LIB[i].id===id) return LIB[i]; return null; }
 
 /* ============ categories ============ */
 var CATS = {
@@ -529,7 +658,8 @@ var CATS = {
   flights:     { label:"Airfare, booked direct", phrase:"flights booked direct with the airline", chip:"Flights" },
   delta:       { label:"Delta, booked direct", phrase:"Delta, booked direct", chip:null },
   hotels:      { label:"Hotel, booked direct", phrase:"hotels booked direct with the property", chip:"Hotels" },
-  chase_travel:{ label:"Chase Travel portal", phrase:"anything booked through Chase Travel", chip:"Chase Travel" },
+  portal_air:  { label:"Flights via your card's portal", phrase:"flights booked through your card's own travel portal", chip:"Portal flights" },
+  portal_hotel:{ label:"Hotels & cars via your card's portal", phrase:"hotels and cars booked through your card's own travel portal", chip:"Portal hotels" },
   travel_other:{ label:"Other travel", chip:"Rental cars & Airbnb" },
   transit:     { label:"Transit & commuting", phrase:"transit and commuting", chip:null },
   lyft:        { label:"Lyft", phrase:"Lyft rides", chip:null },
@@ -549,7 +679,7 @@ var N = {
   superstore:"Codes as a discount store or superstore, never as a supermarket, no matter how much of the cart is food. The grocery bonuses do not apply.",
   wholesale:"Warehouse clubs are excluded from every grocery bonus on these four cards.",
   travel_other:"The 2025 Sapphire Reserve rebuild deleted the general travel category. Car rentals, Airbnb, cruises, trains, parking and third-party booking sites now earn only its base rate. They still count toward the $300 travel credit, though — spend that first.",
-  chase_travel:"Booking through the portal earns the most points, but you give up airline and hotel elite credit, upgrades and status nights, and changes go through Chase rather than the operator.",
+  portal:"Booking through your card's own travel portal earns the most points, but you give up airline and hotel elite credit, upgrades and status nights, and changes go through the issuer rather than the operator.",
   dining_tie:"The Reserve and the Freedom Unlimited pay the same 3× here, so it's a coin flip in the U.S. Use the Reserve anyway if the meal is abroad or you want the trip protections behind it.",
   abroad:"Outside the U.S. the Freedom Unlimited's 3% foreign transaction fee is applied against its earn rate below — that's why it drops. The other three charge nothing.",
   noamex:"Costco takes Visa only, so the Amex is out of the running here.",
@@ -635,8 +765,8 @@ var M = [
   ["Resort fee","hotels","Charged by the property, so it takes the hotel category — one of the few resort fees worth anything."],
 
   // portal
-  ["Chase Travel","chase_travel"],["The Edit","chase_travel","The Reserve's hotel collection books through Chase Travel, so it earns the portal rate and draws on the $500 Edit credit."],
-  ["Ultimate Rewards travel","chase_travel"],
+  ["Chase Travel","portal_hotel"],["The Edit","portal_hotel","The Reserve's hotel collection books through Chase Travel, so it earns the portal rate and draws on the $500 Edit credit."],
+  ["Ultimate Rewards travel","portal_hotel"],["Capital One Travel","portal_hotel"],["Amex Travel","portal_hotel"],["Portal flight booking","portal_air"],
 
   // other travel
   ["Airbnb","travel_other"],["Vrbo","travel_other"],["Booking.com","travel_other"],["Expedia","travel_other"],
@@ -699,11 +829,46 @@ var M = [
 
 /* ============ state ============ */
 var LSK = "whichcard.v1";
-var state = { mode:"simple", ur:1.75, sky:1.2, abroad:false, portal:false, theme:null, rates:{}, custom:[], hidden:{}, offers:[] };
-try{ var saved = JSON.parse(localStorage.getItem(LSK)||"{}"); for(var k in saved) state[k]=saved[k]; }catch(e){}
+var state = { mode:"simple", abroad:false, portal:false, theme:null,
+              rates:{}, custom:[], offers:[], wallet:null, cpps:{} };
+var hadSaved = false;
+try{
+  var raw = localStorage.getItem(LSK);
+  if(raw){ var saved = JSON.parse(raw); for(var k in saved) state[k]=saved[k]; hadSaved = true; }
+}catch(e){}
 function save(){ try{ localStorage.setItem(LSK, JSON.stringify(state)); }catch(e){} }
 
-/* the cards actually in the wallet: built-ins you haven't removed, plus your own */
+/* Carry forward anyone who used this before the library existed: if they have saved
+   work but no wallet, they were on the original four. */
+(function migrate(){
+  if(state.wallet) return;
+  /* any saved blob at all means this device used the app before the library existed */
+  if(hadSaved){
+    state.wallet = LEGACY_WALLET.filter(function(id){ return !(state.hidden||{})[id]; });
+    state.setup = true;
+    save();
+  }
+})();
+if(state.ur) { state.cpps.ur = state.ur; delete state.ur; }
+if(state.sky){ state.cpps.sky = state.sky; delete state.sky; }
+
+function cppFor(curId){
+  var c = CURRENCIES[curId];
+  if(!c) return 1;
+  if(c.fixed) return 1;
+  return state.cpps[curId]!=null ? +state.cpps[curId] : c.cpp;
+}
+/* every currency represented in the wallet, for the valuation sliders */
+function walletCurrencies(){
+  var seen = {}, out = [];
+  wallet().forEach(function(c){
+    if(c.custom || c.cur==="cash") return;
+    if(!seen[c.cur]){ seen[c.cur]=1; out.push(c.cur); }
+  });
+  return out;
+}
+
+/* the cards actually in the wallet: library picks, plus your own */
 var CUSTOM_COLORS = ["#7FA05A","#B07A3F","#5E8FA8","#A8628C","#6E7BA8","#9A8248"];
 function customCard(cc){
   return { id:cc.id, name:cc.name, short:cc.short||cc.name, custom:true,
@@ -712,7 +877,11 @@ function customCard(cc){
            color:cc.color, ftf:+cc.ftf||0, base:+cc.base||1, rates:cc.rates||{}, perks:cc.perks||[] };
 }
 function wallet(){
-  var out = CARDS.filter(function(c){ return !state.hidden[c.id]; });
+  var out = (state.wallet||[]).map(libById).filter(Boolean).map(function(c){
+    return { id:c.id, name:c.name, short:c.short, cur:c.cur, pct:CURRENCIES[c.cur].pct,
+             color:c.color, ftf:c.ftf, amex:c.amex, base:c.base, rates:c.rates,
+             perks:c.perks, caveat:c.caveat, issuer:c.issuer };
+  });
   (state.custom||[]).forEach(function(cc){ out.push(customCard(cc)); });
   return out;
 }
@@ -757,17 +926,18 @@ function rateFor(card, cat){
   return Object.prototype.hasOwnProperty.call(ov,"base") ? +ov.base : card.base;
 }
 function cpp(card){
-  if(card.cur==="ur") return state.ur;
-  if(card.cur==="sky") return state.sky;
   if(card.custom) return card.cpp;
-  return 1;
+  return cppFor(card.cur);
 }
 
 /* ============ ranking ============ */
 function rank(cat, flags){
   flags = flags || {};
   var effCat = cat;
-  if(state.portal && (cat==="flights"||cat==="hotels"||cat==="delta"||cat==="travel_other")) effCat = "chase_travel";
+  if(state.portal){
+    if(cat==="flights"||cat==="delta") effCat = "portal_air";
+    else if(cat==="hotels"||cat==="travel_other") effCat = "portal_hotel";
+  }
 
   var deck = wallet();
   var rows = deck.map(function(c){
@@ -810,7 +980,8 @@ var CAT_ALIAS = {
   flights:"airline airfare plane flight ticket",
   delta:"skymiles airline flight",
   hotels:"hotel lodging stay resort motel",
-  chase_travel:"portal ultimaterewards booking",
+  portal_air:"portal chasetravel capitalonetravel amextravel booking flights",
+  portal_hotel:"portal chasetravel capitalonetravel amextravel booking hotels",
   travel_other:"travel carrental rentalcar airbnb cruise train parking",
   transit:"subway metro train bus commute fare",
   lyft:"rideshare ride",
@@ -891,6 +1062,12 @@ function render(entry){
   if(!entry){ elAns.innerHTML=""; return; }
   var cat = entry.cat, flags = entry.flags||{};
   var rows = rank(cat, flags);
+  if(!rows.length){
+    elAns.innerHTML = '<div class="panel"><h3>No cards yet</h3>'
+      + '<p class="hint">There is nothing to rank until your wallet has at least one card in it.</p>'
+      + '<button class="tbtn on" id="emptyPick">Choose your cards</button></div>';
+    return;
+  }
   var top = rows[0], rest = rows.slice(1);
   var effCat = top.cat;
   var simple = state.mode==="simple";
@@ -898,7 +1075,7 @@ function render(entry){
   var maxV = Math.max.apply(null, rows.map(function(r){return Math.max(metric(r),0.01);}));
 
   var multLine;
-  if(BASE_CATS[effCat] || top.isBase){
+  if(top.isBase){
     multLine = simple ? "Flat rate — nothing here earns a category bonus"
                       : "Base rate — nothing here earns a category bonus";
   } else if(simple){
@@ -964,14 +1141,19 @@ function render(entry){
   if(rest.length && Math.abs(metric(rest[0])-metric(top))<0.005 && !rest[0].dead){
     notes.push(["Tie", top.card.short+" and "+rest[0].card.short+" pay the same rate here. Either is fine — take the one with the better protections or the lower foreign fee.", "gold"]);
   }
-  if(effCat==="chase_travel" && state.portal) notes.push(["Trade-off", N.chase_travel, ""]);
+  if((effCat==="portal_air"||effCat==="portal_hotel") && state.portal) notes.push(["Trade-off", N.portal, ""]);
   if(!state.portal && (cat==="flights"||cat==="hotels"||cat==="delta")){
-    var portalRow = wallet().filter(function(c){return c.id==="csr";})[0];
+    var pcat = (cat==="flights"||cat==="delta") ? "portal_air" : "portal_hotel";
+    var portalRow = null, bestP = 0;
+    wallet().forEach(function(c){
+      var r = rateFor(c,pcat);
+      if(r > bestP){ bestP = r; portalRow = c; }
+    });
     if(portalRow){
-    var pv = rateFor(portalRow,"chase_travel")*cpp(portalRow);
-    var pr = rateFor(portalRow,"chase_travel");
+    var pv = rateFor(portalRow,pcat)*cpp(portalRow);
+    var pr = rateFor(portalRow,pcat);
     if(simple ? pr > top.rate+0.005 : pv > top.value+0.005)
-      notes.push(["Portal", "Booking this through Chase Travel on the Reserve instead would earn "+(simple?pr+"%":fmtVal(pv)+" per $1")+" — but you'd give up elite credit and upgrades. Toggle “Portal booking OK” below to rank it that way.", "gold"]);
+      notes.push(["Portal", "Booking this through the "+portalRow.short+" travel portal instead would earn "+(simple?pr+"%":fmtVal(pv)+" per $1")+" — but you'd give up elite credit and upgrades. Toggle “Portal booking OK” below to rank it that way.", "gold"]);
     }
   }
 
@@ -1016,6 +1198,9 @@ elQ.addEventListener("keydown", function(ev){
   else if(ev.key==="Enter"){ ev.preventDefault(); pick(cursor<0?0:cursor); }
   else if(ev.key==="Escape"){ elQ.value=""; results=[]; renderSugg(); render(null); elClear.classList.add("hidden"); }
 });
+elAns.addEventListener("click", function(ev){
+  if(ev.target.id==="emptyPick") openPicker("add");
+});
 elSugg.addEventListener("click", function(ev){
   var b = ev.target.closest("button"); if(b) pick(+b.dataset.i);
 });
@@ -1033,14 +1218,36 @@ Object.keys(CATS).forEach(function(k){
 });
 
 /* settings */
-var urv=document.getElementById("urv"), skv=document.getElementById("skv");
+var CUR_HINT = {
+  ur:"1.0¢ if you take statement credit. Around 2¢ is typical through Points Boost or a transfer to Hyatt.",
+  ty:"1.0¢ as a statement credit, more if you transfer to a partner airline.",
+  mr:"Only about 0.6¢ as a statement credit, so this rate assumes you transfer to an airline partner.",
+  sky:"Delta prices dynamically. 1.2¢ is a fair long-run average; flash sales beat it, last-minute fares don't.",
+  c1:"1.0¢ toward travel, half that as cash. Above 1¢ assumes you transfer to a partner."
+};
 function syncSettings(){
-  urv.value=state.ur; skv.value=state.sky;
-  document.getElementById("urvv").textContent=(+state.ur).toFixed(2)+"¢ / point";
-  document.getElementById("skvv").textContent=(+state.sky).toFixed(2)+"¢ / mile";
+  var host = document.getElementById("valueOnly");
+  var curs = walletCurrencies();
+  if(!curs.length){
+    host.innerHTML = '<p class="hint">Every card in your wallet earns straight cash back, so there is nothing to value — the two modes show the same thing.</p>';
+    return;
+  }
+  host.innerHTML = curs.map(function(k){
+    var c = CURRENCIES[k], v = cppFor(k);
+    return '<div class="slider">'
+         + '<label for="cpp_'+k+'">'+esc(c.label)+'</label>'
+         + '<span class="v mono" id="cppv_'+k+'">'+v.toFixed(2)+'¢ each</span>'
+         + '<input type="range" id="cpp_'+k+'" data-cur="'+k+'" min="0.5" max="2.6" step="0.05" value="'+v+'">'
+         + (CUR_HINT[k] ? '<small>'+esc(CUR_HINT[k])+'</small>' : '')
+         + '</div>';
+  }).join("");
 }
-urv.addEventListener("input",function(){ state.ur=+urv.value; syncSettings(); save(); if(current) render(current); });
-skv.addEventListener("input",function(){ state.sky=+skv.value; syncSettings(); save(); if(current) render(current); });
+document.getElementById("valueOnly").addEventListener("input", function(ev){
+  var k = ev.target.dataset.cur; if(!k) return;
+  state.cpps[k] = +ev.target.value; save();
+  document.getElementById("cppv_"+k).textContent = (+ev.target.value).toFixed(2)+"¢ each";
+  if(current) render(current);
+});
 
 function toggle(id, key){
   var b=document.getElementById(id);
@@ -1057,6 +1264,7 @@ function paintMode(){
   mS.setAttribute("aria-pressed", simple?"true":"false");
   mV.setAttribute("aria-pressed", simple?"false":"true");
   valueOnly.classList.toggle("hidden", simple);
+  if(!simple) syncSettings();
   modeHint.textContent = simple
     ? "Straight earn rate — what the card actually gives you back. Chase and Amazon points cash out at 1¢ each, so their rate is a real percentage; Delta pays SkyMiles, which aren't cents, so those are shown as miles per dollar."
     : "Converts every card to cents earned per dollar using the values below, so points and miles can be compared head to head. The rankings move when these sliders move.";
@@ -1066,17 +1274,29 @@ mS.addEventListener("click",function(){ state.mode="simple"; save(); paintMode()
 mV.addEventListener("click",function(){ state.mode="value"; save(); paintMode(); });
 
 var tTheme=document.getElementById("tTheme");
-function applyTheme(){ if(state.theme) document.documentElement.setAttribute("data-theme",state.theme); else document.documentElement.removeAttribute("data-theme"); }
+var THEME_ICON = {
+  dark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.5 14.6A8.6 8.6 0 019.4 3.5a8.6 8.6 0 1011.1 11.1z"/></svg>',
+  light:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></svg>',
+  auto:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 010 17z" fill="currentColor" stroke="none"/></svg>'
+};
+function applyTheme(){
+  if(state.theme) document.documentElement.setAttribute("data-theme",state.theme);
+  else document.documentElement.removeAttribute("data-theme");
+  var key = state.theme || "auto";
+  tTheme.innerHTML = THEME_ICON[key];
+  tTheme.classList.toggle("on", !!state.theme);
+  var label = key==="auto" ? "Theme: following your phone" : "Theme: "+key;
+  tTheme.setAttribute("aria-label", label);
+  tTheme.setAttribute("title", label+" — tap to change");
+}
 tTheme.addEventListener("click",function(){
   state.theme = state.theme==="dark" ? "light" : state.theme==="light" ? null : "dark";
   applyTheme(); save();
-  tTheme.textContent = state.theme ? "Theme: "+state.theme : "Theme";
 });
 applyTheme();
-if(state.theme) tTheme.textContent="Theme: "+state.theme;
 
 /* ============ cards view ============ */
-var CAT_ORDER = ["chase_travel","flights","hotels","delta","dining","grocery","grocery_web",
+var CAT_ORDER = ["portal_air","portal_hotel","flights","hotels","delta","dining","grocery","grocery_web",
                  "amazon","gas","drugstore","transit","lyft","rideshare","travel_other",
                  "streaming","superstore","wholesale","retail","bills"];
 
@@ -1107,7 +1327,8 @@ function rateRows(c){
 function renderCards(){
   var deck = wallet();
   var h = '<div class="panel"><h3>Your wallet</h3><p class="hint">Every rate here is editable and saves on this device. A blank category means the card just pays its base rate — fill one in and it starts winning that category. Add any card you carry that isn\'t listed.</p>'
-        + '<button class="tbtn on" id="addCard">+ Add a card</button></div>';
+        + '<div class="toggles"><button class="tbtn on" id="pickMore">+ Add from library</button>'
+        + '<button class="tbtn" id="addCard">+ Add your own</button></div></div>';
 
   deck.forEach(function(c){
     h += '<div class="cardsheet" style="border-left-color:'+c.color+'">'
@@ -1132,23 +1353,19 @@ function renderCards(){
 
     h += '<div class="ratetable">' + rateRows(c) + '</div>';
 
+    if(c.caveat)
+      h += '<div class="note flag" style="margin-top:14px"><span class="k">Caps</span><span>'+esc(c.caveat)+'</span></div>';
+
     if(c.perks && c.perks.length)
       h += '<ul class="perks">'+c.perks.map(function(pk){return "<li><span>"+esc(pk)+"</span></li>";}).join("")+'</ul>';
 
     h += '<div class="sheetfoot">'
        + (c.custom ? '<button class="tbtn danger" data-del="'+c.id+'">Delete this card</button>'
-                   : '<button class="tbtn" data-hide="'+c.id+'">I don\'t have this card</button>')
+                   : '<button class="tbtn" data-drop="'+c.id+'">Remove from my wallet</button>')
        + '</div></div>';
   });
 
-  var gone = CARDS.filter(function(c){ return state.hidden[c.id]; });
-  if(gone.length){
-    h += '<div class="panel"><h3>Removed</h3><p class="hint">Not counted in any ranking.</p><div class="toggles">'
-       + gone.map(function(c){ return '<button class="tbtn" data-show="'+c.id+'">+ '+esc(c.short)+'</button>'; }).join("")
-       + '</div></div>';
-  }
-
-  h += '<div class="panel"><h3>Reset</h3><p class="hint">Puts the four built-in cards back to their default rates. Cards you added are left alone.</p>'
+  h += '<div class="panel"><h3>Reset</h3><p class="hint">Puts every library card back to its published rates. Cards you created by hand are left alone.</p>'
      + '<button class="tbtn" id="resetRates">Reset built-in rates</button></div>';
 
   var host = document.getElementById("viewCards");
@@ -1195,12 +1412,13 @@ function renderCards(){
         state.custom = state.custom.filter(function(x){ return x.id!==b.dataset.del; });
         delete state.rates[b.dataset.del];
         save(); renderCards();
-      } else if(b.dataset.hide){
-        state.hidden[b.dataset.hide]=true; save(); renderCards();
-      } else if(b.dataset.show){
-        delete state.hidden[b.dataset.show]; save(); renderCards();
+      } else if(b.dataset.drop){
+        state.wallet = (state.wallet||[]).filter(function(x){ return x!==b.dataset.drop; });
+        save(); renderCards(); syncSettings();
+      } else if(b.id==="pickMore"){
+        openPicker("add");
       } else if(b.id==="resetRates"){
-        CARDS.forEach(function(c){ delete state.rates[c.id]; });
+        (state.wallet||[]).forEach(function(id){ delete state.rates[id]; });
         save(); renderCards();
       }
     });
@@ -1328,16 +1546,92 @@ function paintOfferCount(){
   document.getElementById("navOffers").textContent = n ? "Offers · "+n : "Offers";
 }
 
+/* ============ card picker ============ */
+var pickerMode = "setup";   /* "setup" on first run, "add" from the My cards tab */
+
+function renderSetup(){
+  var have = {};
+  (state.wallet||[]).forEach(function(id){ have[id]=1; });
+
+  var issuers = [];
+  LIB.forEach(function(c){ if(issuers.indexOf(c.issuer)<0) issuers.push(c.issuer); });
+
+  var first = (pickerMode==="setup");
+  var h = '<div class="panel setupintro">'
+        + '<h3>'+(first?"Set up your wallet":"Add cards")+'</h3>'
+        + '<p class="hint">'+(first
+            ? "Tick the cards you carry. The app ranks only these, so leave out anything you don't have. Every rate is editable afterwards, and you can add cards that aren't listed."
+            : "Tick anything to add it. Untick to remove it from your wallet — your edits to that card are kept.")
+          +'</p>'
+        + '<p class="hint countline"><b id="pickCount">0 selected</b></p>'
+        + '</div>';
+
+  issuers.forEach(function(iss){
+    h += '<div class="panel"><h3>'+esc(iss)+'</h3><div class="picklist">';
+    LIB.filter(function(c){ return c.issuer===iss; }).forEach(function(c){
+      var on = !!have[c.id];
+      h += '<button class="pick'+(on?" on":"")+'" data-pick="'+c.id+'" aria-pressed="'+(on?"true":"false")+'">'
+         + '<span class="prail" style="background:'+c.color+'"></span>'
+         + '<span class="pbody"><span class="pname">'+esc(c.name)+'</span>'
+         + '<span class="pcur">'+esc(CURRENCIES[c.cur].label)+(c.ftf?' · '+c.ftf+'% foreign fee':'')+'</span></span>'
+         + '<span class="ptick" aria-hidden="true"></span>'
+         + '</button>';
+    });
+    h += '</div></div>';
+  });
+
+  h += '<div class="panel"><h3>Not listed?</h3>'
+     + '<p class="hint">Add it by hand on the My cards tab once you\'re through here — name it, set what it earns, and fill in its categories.</p></div>';
+
+  h += '<div class="setupdone"><button class="tbtn on big" id="pickDone">'
+     + (first?"Done — start using it":"Done")+'</button></div>';
+
+  var host = document.getElementById("viewSetup");
+  host.innerHTML = h;
+  updatePickCount();
+
+  if(!renderSetup.bound){
+    renderSetup.bound = true;
+    host.addEventListener("click", function(ev){
+      var b = ev.target.closest("button"); if(!b) return;
+      if(b.dataset.pick){
+        var id = b.dataset.pick;
+        state.wallet = state.wallet||[];
+        var i = state.wallet.indexOf(id);
+        if(i>=0) state.wallet.splice(i,1); else state.wallet.push(id);
+        b.classList.toggle("on", i<0);
+        b.setAttribute("aria-pressed", i<0 ? "true":"false");
+        save(); updatePickCount();
+      } else if(b.id==="pickDone"){
+        state.setup = true; save();
+        paintOfferCount();
+        showTab(vS);
+        render(current || {name:"Everything else", cat:"none"});
+        window.scrollTo(0,0);
+      }
+    });
+  }
+}
+function updatePickCount(){
+  var el = document.getElementById("pickCount"); if(!el) return;
+  var n = (state.wallet||[]).length;
+  el.textContent = n===0 ? "Nothing selected yet" : n===1 ? "1 card selected" : n+" cards selected";
+}
+
 var vS=document.getElementById("viewSearch"), vC=document.getElementById("viewCards"),
     nS=document.getElementById("navSearch"), nC=document.getElementById("navCards");
 var vO=document.getElementById("viewOffers"), nO=document.getElementById("navOffers");
+var vSetup=document.getElementById("viewSetup");
 function showTab(which){
   [[vS,nS],[vC,nC],[vO,nO]].forEach(function(pair){
     var on = (pair[0]===which);
     pair[0].classList.toggle("hidden", !on);
     pair[1].setAttribute("aria-pressed", on?"true":"false");
   });
+  vSetup.classList.toggle("hidden", which!==vSetup);
+  document.querySelector("header.top .topmeta").classList.toggle("hidden", which===vSetup && pickerMode==="setup");
 }
+function openPicker(mode){ pickerMode = mode; renderSetup(); showTab(vSetup); window.scrollTo(0,0); }
 nS.onclick=function(){ showTab(vS); if(current) render(current); };
 nC.onclick=function(){ showTab(vC); renderCards(); };
 nO.onclick=function(){ showTab(vO); renderOffers(); };
@@ -1345,6 +1639,7 @@ nO.onclick=function(){ showTab(vO); renderOffers(); };
 syncSettings();
 paintMode();
 paintOfferCount();
+if(!state.setup) openPicker("setup");
 render({name:"Everything else", cat:"none"});
 if(!("ontouchstart" in window)) elQ.focus();
 })();
