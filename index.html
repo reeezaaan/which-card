@@ -1,29 +1,8 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="The best card to pay with, by merchant.">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Which Card">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#EFEEEA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#131417" media="(prefers-color-scheme: dark)">
-<style>
-  /* keep content clear of the notch and the home indicator when launched standalone */
-  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-  .searchdock{top:env(safe-area-inset-top)}
-</style>
 <title>Which Card Do I Swipe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Azeret+Mono:wght@400;500;600;700&display=swap">
-</head>
-<body>
+
 <style>
 :root{
   --ground:#EFEEEA;
@@ -244,6 +223,52 @@ header.top{
 .bar{height:4px;width:132px;max-width:100%;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-top:7px}
 .bar i{display:block;height:100%;border-radius:2px;opacity:.8;transition:width .4s cubic-bezier(.2,.7,.3,1)}
 
+/* ---------- offers ---------- */
+.offerbanner{
+  background:var(--brass-wash);border:1px solid var(--brass);border-radius:12px;
+  padding:16px 20px;margin-bottom:9px;
+}
+.offerbanner.urgent{border-width:2px}
+.offerbanner .wlabel{background:var(--brass);color:var(--ground);margin-bottom:8px}
+.offerbanner .oname{margin:0;font-size:22px;font-weight:700;letter-spacing:-.025em;
+  font-variation-settings:"wdth" 106;color:var(--brass-ink)}
+.offerbanner .otext{margin:3px 0 0;font-size:15px;font-weight:500;color:var(--ink)}
+.offerbanner .owhen{margin:7px 0 0;font-family:"Azeret Mono",monospace;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--brass-ink)}
+.offerbanner .oswap{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--brass);
+  font-size:13px;line-height:1.5;color:var(--ink-2)}
+
+.owhere{margin:10px 0 0;font-size:14px;line-height:1.5}
+.onote{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+a.tbtn{text-decoration:none;display:inline-block}
+
+.offerform{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.offerform label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.offerform input,.offerform select{
+  background:var(--ground);border:1px solid var(--line);border-radius:6px;
+  padding:8px 10px;font-size:14px;font-weight:500;width:100%;
+}
+.offerform input:focus,.offerform select:focus{outline:none;border-color:var(--brass)}
+.offerform button{grid-column:1/-1;justify-self:start}
+
+.offerlist{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.offerrow{
+  display:grid;grid-template-columns:5px 1fr auto auto 26px;align-items:center;gap:12px;
+  background:var(--ground);border:1px solid var(--line);border-radius:9px;
+  padding:10px 12px 10px 0;overflow:hidden;
+}
+.offerrow .orail{width:5px;align-self:stretch;min-height:38px}
+.offerrow .om{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.offerrow .od{font-size:13px;color:var(--ink-2);margin-top:1px}
+.offerrow .oc{font-size:12px;color:var(--muted);white-space:nowrap}
+.offerrow .oe{font-family:"Azeret Mono",monospace;font-size:11px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.offerrow.urgent .oe{color:var(--warn);font-weight:700}
+.offerrow.gone{opacity:.5}
+.offerrow.gone .om{text-decoration:line-through}
+.orm{background:none;border:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;padding:2px 6px}
+.orm:hover{color:var(--warn)}
+
 /* notes */
 .notes{margin-top:14px;display:flex;flex-direction:column;gap:8px}
 .note{
@@ -333,6 +358,8 @@ footer b{color:var(--ink-2);font-weight:600}
   .wname{font-size:24px}
   .qhead h2{font-size:22px}
   .row{grid-template-columns:6px 1fr auto;row-gap:2px}
+  .offerrow{grid-template-columns:5px 1fr 26px;row-gap:3px}
+  .offerrow .oc,.offerrow .oe{grid-column:2/3}
   .row .rmult{grid-column:2/-1;font-size:11px}
 }
 </style>
@@ -343,6 +370,7 @@ footer b{color:var(--ink-2);font-weight:600}
     <div class="topmeta">
       <button class="tbtn" id="navSearch" aria-pressed="true">Search</button>
       <button class="tbtn" id="navCards" aria-pressed="false">My cards</button>
+      <button class="tbtn" id="navOffers" aria-pressed="false">Offers</button>
     </div>
   </header>
 
@@ -389,6 +417,7 @@ footer b{color:var(--ink-2);font-weight:600}
   </div>
 
   <div id="viewCards" class="hidden"></div>
+  <div id="viewOffers" class="hidden"></div>
 
   <footer>
     <b>Percentages are the earn rate, not a guarantee of value.</b> A Chase point is worth 1¢ cashed out and more if you transfer it, so treat the percentage as the floor. <b>Check the rates before you rely on them.</b> Issuers change categories constantly — the Sapphire Reserve was rebuilt in 2025 and no longer pays a bonus on general travel, which is the single biggest change reflected here. Every multiplier on the <b>My cards</b> tab is editable and saves in this browser, so correct anything that has moved. Merchant categories are the usual coding, not a guarantee: the merchant's own MCC decides, and it can differ by location and by how you check out.
@@ -632,7 +661,7 @@ var M = [
 
 /* ============ state ============ */
 var LSK = "whichcard.v1";
-var state = { mode:"simple", ur:1.75, sky:1.2, abroad:false, portal:false, theme:null, rates:{}, custom:[], hidden:{} };
+var state = { mode:"simple", ur:1.75, sky:1.2, abroad:false, portal:false, theme:null, rates:{}, custom:[], hidden:{}, offers:[] };
 try{ var saved = JSON.parse(localStorage.getItem(LSK)||"{}"); for(var k in saved) state[k]=saved[k]; }catch(e){}
 function save(){ try{ localStorage.setItem(LSK, JSON.stringify(state)); }catch(e){} }
 
@@ -649,6 +678,34 @@ function wallet(){
   (state.custom||[]).forEach(function(cc){ out.push(customCard(cc)); });
   return out;
 }
+/* ---- merchant-funded offers you've activated (Chase Offers / Amex Offers) ---- */
+function todayISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
+function daysUntil(iso){
+  if(!iso) return null;
+  var a=new Date(iso+"T00:00:00"), b=new Date(todayISO()+"T00:00:00");
+  return Math.round((a-b)/86400000);
+}
+function liveOffers(){
+  return (state.offers||[]).filter(function(o){
+    var d = daysUntil(o.expires);
+    return d===null || d>=0;
+  });
+}
+function cardById(id){
+  var all = wallet();
+  for(var i=0;i<all.length;i++) if(all[i].id===id) return all[i];
+  return null;
+}
+function offersFor(name){
+  var n = norm(name);
+  if(!n) return [];
+  return liveOffers().filter(function(o){
+    var m = norm(o.merchant);
+    if(!m) return false;
+    return m===n || (m.length>=3 && n.indexOf(m)>=0) || (n.length>=3 && m.indexOf(n)>=0);
+  });
+}
+
 function curLabel(card){
   if(card.custom) return card.pct ? "cash back" : card.curName;
   return CURRENCIES[card.cur] ? CURRENCIES[card.cur].label : "points";
@@ -813,6 +870,24 @@ function render(entry){
   }
 
   var h = '<div class="qhead"><h2>'+esc(entry.name)+'</h2><span class="cattag">'+esc(CATS[effCat].label)+'</span></div>';
+
+  /* an activated statement-credit offer usually beats any multiplier, so it goes first */
+  var offs = offersFor(entry.name);
+  offs.forEach(function(o){
+    var oc = cardById(o.cardId);
+    var d = daysUntil(o.expires);
+    var when = d===null ? "" : d===0 ? "Expires today" : d===1 ? "Expires tomorrow"
+             : d<=7 ? "Expires in "+d+" days" : "Expires "+o.expires;
+    h += '<div class="offerbanner'+(d!==null&&d<=3?" urgent":"")+'">'
+       + '<span class="wlabel">Offer on this card</span>'
+       + '<p class="oname">'+esc(oc?oc.short:"Removed card")+'</p>'
+       + '<p class="otext">'+esc(o.text||"Activated offer")+'</p>'
+       + (when?'<p class="owhen">'+esc(when)+'</p>':'')
+       + (oc && oc.id!==top.card.id
+           ? '<p class="oswap">Points say '+esc(top.card.short)+', but a statement credit is normally worth more than the difference. Pay with the '+esc(oc.short)+'.</p>'
+           : '')
+       + '</div>';
+  });
 
   h += '<div class="winner">'
      +   '<div class="wtop"><div>'
@@ -1094,23 +1169,145 @@ function renderCards(){
   }
 }
 
+/* ============ offers view ============ */
+var OFFER_HOMES = [
+  { ids:["csr","cfu","amz"], prog:"Chase Offers",
+    where:"Chase app \u2192 tap the card \u2192 scroll to Chase Offers. Or chase.com \u2192 the card \u2192 Chase Offers.",
+    url:"https://www.chase.com/personal/credit-cards/chase-offers",
+    note:"Listed separately for every Chase card you hold, and the lists differ \u2014 the same merchant can be 10% on one card and absent on another. Check all three." },
+  { ids:["dap"], prog:"Amex Offers",
+    where:"Amex app \u2192 the card \u2192 Offers & Benefits. Or amex.com \u2192 Offers.",
+    url:"https://global.americanexpress.com/offers/eligible",
+    note:"You must tap Add to Card before you pay. Many are one-use and some cap the credit." },
+  { ids:["amz"], prog:"Amazon coupons and promos",
+    where:"amazon.com/coupons, plus the promo strip on the product page itself.",
+    url:"https://www.amazon.com/coupons",
+    note:"Separate from Chase Offers and stackable with them \u2014 the Amazon promo comes off the price, the Chase Offer comes back as a statement credit." }
+];
+
+function renderOffers(){
+  var deck = wallet();
+  var live = liveOffers().slice().sort(function(a,b){
+    if(!a.expires) return 1; if(!b.expires) return -1;
+    return a.expires < b.expires ? -1 : 1;
+  });
+  var dead = (state.offers||[]).filter(function(o){ var d=daysUntil(o.expires); return d!==null && d<0; });
+
+  var h = '<div class="panel"><h3>Where your offers live</h3>'
+        + '<p class="hint">These are merchant-funded deals that change every week and differ by account, so nobody can list them for you \u2014 you have to open the app and activate them. Once you have, log them below and they\'ll surface the moment you search that merchant.</p></div>';
+
+  OFFER_HOMES.forEach(function(hm){
+    var names = hm.ids.map(function(id){ var c=cardById(id); return c?c.short:null; }).filter(Boolean);
+    if(!names.length) return;
+    h += '<div class="cardsheet" style="border-left-color:var(--brass)">'
+       + '<header><h3>'+esc(hm.prog)+'</h3><span class="cur">'+esc(names.join(" \u00B7 "))+'</span></header>'
+       + '<p class="owhere">'+esc(hm.where)+'</p>'
+       + '<p class="onote">'+esc(hm.note)+'</p>'
+       + '<div class="sheetfoot"><a class="tbtn" href="'+hm.url+'" target="_blank" rel="noopener">Open '+esc(hm.prog)+'</a></div>'
+       + '</div>';
+  });
+
+  h += '<div class="panel"><h3>Log an offer you activated</h3>'
+     + '<div class="offerform">'
+     + '<label>Merchant<input type="text" id="ofM" list="ofList" placeholder="Instacart" autocomplete="off"></label>'
+     + '<label>Card<select id="ofC">'
+     +   deck.map(function(c){ return '<option value="'+c.id+'">'+esc(c.short)+'</option>'; }).join("")
+     + '</select></label>'
+     + '<label>The deal<input type="text" id="ofT" placeholder="$10 back on $50+"></label>'
+     + '<label>Expires<input type="date" id="ofE"></label>'
+     + '<button class="tbtn on" id="ofAdd">Add offer</button>'
+     + '</div>'
+     + '<datalist id="ofList">'+M.map(function(m){ return '<option value="'+esc(m[0])+'">'; }).join("")+'</datalist>'
+     + '</div>';
+
+  h += '<div class="panel"><h3>Active'+(live.length?" \u00B7 "+live.length:"")+'</h3>';
+  if(!live.length){
+    h += '<p class="hint">Nothing logged yet. Anything you add shows up here and on the search screen.</p>';
+  } else {
+    h += '<div class="offerlist">' + live.map(function(o){
+      var c = cardById(o.cardId), d = daysUntil(o.expires);
+      var when = d===null ? "No end date" : d===0 ? "Today" : d===1 ? "Tomorrow" : d+" days left";
+      return '<div class="offerrow'+(d!==null&&d<=3?" urgent":"")+'">'
+           + '<span class="orail" style="background:'+(c?c.color:"var(--muted)")+'"></span>'
+           + '<div><div class="om">'+esc(o.merchant)+'</div>'
+           + '<div class="od">'+esc(o.text||"Activated offer")+'</div></div>'
+           + '<span class="oc">'+esc(c?c.short:"Removed card")+'</span>'
+           + '<span class="oe">'+esc(when)+'</span>'
+           + '<button class="orm" data-off="'+o.id+'" aria-label="Remove offer">&times;</button>'
+           + '</div>';
+    }).join("") + '</div>';
+  }
+  h += '</div>';
+
+  if(dead.length){
+    h += '<div class="panel"><h3>Expired \u00B7 '+dead.length+'</h3>'
+       + '<p class="hint">No longer shown on the search screen.</p>'
+       + '<div class="offerlist">' + dead.map(function(o){
+           var c = cardById(o.cardId);
+           return '<div class="offerrow gone"><span class="orail" style="background:var(--muted)"></span>'
+                + '<div><div class="om">'+esc(o.merchant)+'</div><div class="od">'+esc(o.text||"")+'</div></div>'
+                + '<span class="oc">'+esc(c?c.short:"")+'</span><span class="oe">'+esc(o.expires)+'</span>'
+                + '<button class="orm" data-off="'+o.id+'" aria-label="Remove offer">&times;</button></div>';
+         }).join("") + '</div>'
+       + '<div class="toggles" style="margin-top:12px"><button class="tbtn" id="ofClear">Clear expired</button></div></div>';
+  }
+
+  var host = document.getElementById("viewOffers");
+  host.innerHTML = h;
+
+  if(!renderOffers.bound){
+    renderOffers.bound = true;
+    host.addEventListener("click", function(ev){
+      var b = ev.target.closest("button"); if(!b) return;
+      if(b.id==="ofAdd"){
+        var m = document.getElementById("ofM").value.trim();
+        if(!m){ document.getElementById("ofM").focus(); return; }
+        state.offers = state.offers||[];
+        state.offers.push({ id:"o"+(Date.now()), merchant:m,
+                            cardId:document.getElementById("ofC").value,
+                            text:document.getElementById("ofT").value.trim(),
+                            expires:document.getElementById("ofE").value||null });
+        save(); renderOffers(); paintOfferCount();
+        document.getElementById("ofM").focus();
+      } else if(b.dataset.off){
+        state.offers = state.offers.filter(function(o){ return o.id!==b.dataset.off; });
+        save(); renderOffers(); paintOfferCount();
+      } else if(b.id==="ofClear"){
+        state.offers = liveOffers();
+        save(); renderOffers(); paintOfferCount();
+      }
+    });
+    host.addEventListener("keydown", function(ev){
+      if(ev.key==="Enter" && ev.target.tagName==="INPUT"){
+        ev.preventDefault(); document.getElementById("ofAdd").click();
+      }
+    });
+  }
+}
+
+function paintOfferCount(){
+  var n = liveOffers().length;
+  document.getElementById("navOffers").textContent = n ? "Offers · "+n : "Offers";
+}
+
 var vS=document.getElementById("viewSearch"), vC=document.getElementById("viewCards"),
     nS=document.getElementById("navSearch"), nC=document.getElementById("navCards");
-nS.onclick=function(){ vS.classList.remove("hidden"); vC.classList.add("hidden"); nS.setAttribute("aria-pressed","true"); nC.setAttribute("aria-pressed","false"); if(current) render(current); };
-nC.onclick=function(){ vC.classList.remove("hidden"); vS.classList.add("hidden"); nC.setAttribute("aria-pressed","true"); nS.setAttribute("aria-pressed","false"); renderCards(); };
+var vO=document.getElementById("viewOffers"), nO=document.getElementById("navOffers");
+function showTab(which){
+  [[vS,nS],[vC,nC],[vO,nO]].forEach(function(pair){
+    var on = (pair[0]===which);
+    pair[0].classList.toggle("hidden", !on);
+    pair[1].setAttribute("aria-pressed", on?"true":"false");
+  });
+}
+nS.onclick=function(){ showTab(vS); if(current) render(current); };
+nC.onclick=function(){ showTab(vC); renderCards(); };
+nO.onclick=function(){ showTab(vO); renderOffers(); };
 
 syncSettings();
 paintMode();
+paintOfferCount();
 render({name:"Everything else", cat:"none"});
 if(!("ontouchstart" in window)) elQ.focus();
 })();
 </script>
-<script>
-if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
-  window.addEventListener("load", function(){
-    navigator.serviceWorker.register("sw.js").catch(function(){});
-  });
-}
-</script>
-</body>
-</html>
